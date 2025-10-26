@@ -45,7 +45,7 @@ class TrainingConfig:
     model_description = "Ultimate Strategic Intelligence Master for Racing"
     
     # Data paths
-    data_root = "../../data/tracks"
+    data_root = "/content/ToyotaGR/src/data/tracks"
     tracks = ["Sonoma", "COTA", "Sebring", "Road America", "VIR", "barber"]
     
     # Training stages (progressive curriculum)
