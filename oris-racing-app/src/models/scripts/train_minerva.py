@@ -1048,28 +1048,36 @@ class MinervaTrainer:
     def _initialize_training_components(self):
         """Initialize optimizer, scheduler, scaler, and loss functions"""
         # Parameter groups for different learning rates
-        param_groups = [
-            {
-                'params': self.model.pit_strategy_head.parameters(),
-                'lr': self.config.stages[0]['lr'],
-                'name': 'pit_strategy'
-            },
-            {
-                'params': self.model.tire_strategy_head.parameters(),
-                'lr': self.config.stages[0]['lr'],
-                'name': 'tire_strategy'
-            },
-            {
-                'params': self.model.fuel_optimization_head.parameters(),
-                'lr': self.config.stages[0]['lr'],
-                'name': 'fuel_optimization'
-            },
-            {
+        # Get all available heads from the model
+        param_groups = []
+        
+        # Standard heads that should always exist
+        standard_heads = ['pit_strategy_head', 'tire_strategy_head', 'fuel_optimization_head']
+        for head_name in standard_heads:
+            if hasattr(self.model, head_name):
+                param_groups.append({
+                    'params': getattr(self.model, head_name).parameters(),
+                    'lr': self.config.stages[0]['lr'],
+                    'name': head_name.replace('_head', '')
+                })
+        
+        # Additional heads for specific scenarios
+        additional_heads = ['overtake_decision_head', 'risk_level_head', 'push_level_head', 'fuel_mode_head']
+        for head_name in additional_heads:
+            if hasattr(self.model, head_name):
+                param_groups.append({
+                    'params': getattr(self.model, head_name).parameters(),
+                    'lr': self.config.stages[0]['lr'],
+                    'name': head_name.replace('_head', '')
+                })
+        
+        # Track embedding
+        if hasattr(self.model, 'track_embedding'):
+            param_groups.append({
                 'params': self.model.track_embedding.parameters(),
                 'lr': self.config.stages[0]['lr'] * 2,  # Higher LR for embeddings
                 'name': 'track_embedding'
-            }
-        ]
+            })
         
         # Optimizer
         self.optimizer = torch.optim.AdamW(

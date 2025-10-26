@@ -49,6 +49,31 @@ class MinervaRacingAdapter(nn.Module):
             nn.Linear(128, 1)  # Fuel save mode percentage
         )
         
+        # Additional heads for other scenarios
+        self.overtake_decision_head = nn.Sequential(
+            nn.Linear(self.d_model, 128),
+            nn.ReLU(),
+            nn.Linear(128, 2)  # Binary: overtake or not
+        )
+        
+        self.risk_level_head = nn.Sequential(
+            nn.Linear(self.d_model, 128),
+            nn.ReLU(),
+            nn.Linear(128, 3)  # Low, Medium, High
+        )
+        
+        self.push_level_head = nn.Sequential(
+            nn.Linear(self.d_model, 128),
+            nn.ReLU(),
+            nn.Linear(128, 3)  # Conservative, Normal, Aggressive
+        )
+        
+        self.fuel_mode_head = nn.Sequential(
+            nn.Linear(self.d_model, 128),
+            nn.ReLU(),
+            nn.Linear(128, 3)  # Normal, Save, Critical
+        )
+        
         # Track-specific embeddings
         self.track_embedding = nn.Embedding(num_tracks, self.d_model)
         
@@ -93,26 +118,41 @@ class MinervaRacingAdapter(nn.Module):
         # Convert race state to grid
         device = next(self.parameters()).device
         grid = self.encode_race_state_as_grid(race_data).to(device)
-        grid = grid.unsqueeze(0).unsqueeze(0)  # Add batch and channel dims
+        
+        # Create proper input tensor for MINERVA (10 channels for ARC-AGI format)
+        input_tensor = torch.zeros(1, 10, 30, 30, device=device)
+        input_tensor[0, 0] = grid  # Put racing data in first channel
         
         # Get track embedding
         track_id = race_data['track_id']
         track_emb = self.track_embedding(torch.tensor([track_id], device=device))
         
-        # Process through MINERVA's strategic transformer
-        # Create a dummy 4D tensor (batch, channels, height, width)
-        device = next(self.parameters()).device
-        features = torch.randn(1, self.minerva.hidden_dim, 8, 8, device=device)
-        strategic_features, _ = self.minerva.deep_strategic_transformer(features)
+        # Process through MINERVA to get strategic features
+        minerva_output = self.minerva(input_tensor, mode='inference')
+        
+        # Extract the strategic features from MINERVA's output
+        if 'strategic_features' in minerva_output:
+            strategic_features = minerva_output['strategic_features']
+        elif 'features' in minerva_output:
+            strategic_features = minerva_output['features']
+        else:
+            strategic_features = minerva_output['predicted_output']
+        
+        # Global pooling to get feature vector
+        features = strategic_features.mean(dim=[2, 3]).squeeze(0)  # Remove batch dim
         
         # Combine with track-specific knowledge
-        features = strategic_features.mean(dim=[2, 3]) + track_emb
+        combined_features = features + track_emb.squeeze(0)
         
-        # Generate racing predictions
+        # Generate racing predictions for all scenario types
         predictions = {
-            'pit_strategy': self.pit_strategy_head(features),
-            'tire_choice': self.tire_strategy_head(features),
-            'fuel_save': torch.sigmoid(self.fuel_optimization_head(features))
+            'pit_strategy': self.pit_strategy_head(combined_features),
+            'tire_choice': self.tire_strategy_head(combined_features),
+            'fuel_save': torch.sigmoid(self.fuel_optimization_head(combined_features)),
+            'overtake_decision': self.overtake_decision_head(combined_features),
+            'risk_level': self.risk_level_head(combined_features),
+            'push_level': self.push_level_head(combined_features),
+            'fuel_mode': self.fuel_mode_head(combined_features)
         }
         
         return predictions
@@ -201,6 +241,10 @@ def train_minerva_racing(
         {'params': model.pit_strategy_head.parameters()},
         {'params': model.tire_strategy_head.parameters()},
         {'params': model.fuel_optimization_head.parameters()},
+        {'params': model.overtake_decision_head.parameters()},
+        {'params': model.risk_level_head.parameters()},
+        {'params': model.push_level_head.parameters()},
+        {'params': model.fuel_mode_head.parameters()},
         {'params': model.track_embedding.parameters()}
     ], lr=learning_rate)
     
