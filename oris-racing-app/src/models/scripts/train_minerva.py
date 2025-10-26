@@ -1074,16 +1074,12 @@ class MinervaTrainer:
         print(f"Total parameters: {total_params:,}")
         print(f"Trainable parameters: {trainable_params:,}")
         
-        # Load best checkpoint if available
-        best_checkpoint_path = os.path.join(self.config.checkpoint_dir, "minerva_best.pt")
-        if os.path.exists(best_checkpoint_path):
-            try:
-                checkpoint = torch.load(best_checkpoint_path, map_location=self.device)
-                self.model.load_state_dict(checkpoint['model_state_dict'])
-                self.best_performance = checkpoint.get('performance', checkpoint.get('best_accuracy', 0.0))
-                print(f"\033[92mLoaded best checkpoint with {self.best_performance:.2f}% accuracy\033[0m")
-            except Exception as e:
-                print(f"Warning: Could not load best checkpoint: {e}")
+        # Initialize best performance tracking (stage-specific loading will happen in each stage)
+        self.best_performance = 0.0
+        
+        # NOTE: We don't load the global best checkpoint here anymore
+        # Each stage will load its own best checkpoint independently
+        print(f"\033[93mInitializing fresh training - stage checkpoints will be loaded per stage\033[0m")
         
         # Initialize EMA model for stability
         self.ema_model = self._create_ema_model()
@@ -1269,6 +1265,9 @@ class MinervaTrainer:
             print(f"\033[94mEpochs: {stage['epochs']} | Learning Rate: {stage['lr']}\033[0m")
             print(f"\033[94m{'='*125}\033[0m\n")
             
+            # Load stage-specific checkpoint if it exists
+            self._load_stage_checkpoint(stage['name'])
+            
             # Update learning rates for new stage
             self._update_learning_rates(stage['lr'])
             
@@ -1331,7 +1330,15 @@ class MinervaTrainer:
     
     def _train_stage(self, stage: Dict, stage_idx: int) -> float:
         """Train a single stage"""
-        best_stage_performance = 0.0
+        # Load existing stage performance if checkpoint exists
+        stage_checkpoint_path = os.path.join(self.config.checkpoint_dir, f"minerva_stage_{stage['name']}.pt")
+        if os.path.exists(stage_checkpoint_path):
+            checkpoint = torch.load(stage_checkpoint_path, map_location=self.device)
+            best_stage_performance = checkpoint.get('performance', 0.0)
+            print(f"Resuming stage {stage['name']} from best performance: {best_stage_performance:.2f}%")
+        else:
+            best_stage_performance = 0.0
+            
         patience = 5  # Early stopping patience
         epochs_without_improvement = 0
         
@@ -1343,11 +1350,16 @@ class MinervaTrainer:
             if (epoch + 1) % self.config.val_interval == 0 or len(self.train_dataset) < 100:
                 val_metrics = self._validate()
                 
-                # Track best performance
+                # Track best performance for this stage
                 if val_metrics['accuracy'] > best_stage_performance:
                     best_stage_performance = val_metrics['accuracy']
                     epochs_without_improvement = 0  # Reset patience
                     
+                    # Save stage-specific best checkpoint
+                    self._save_checkpoint(f"minerva_stage_{stage['name']}.pt", val_metrics['accuracy'])
+                    print(f"\033[92mNew stage {stage['name']} best: {best_stage_performance:.2f}% - Saved!\033[0m")
+                    
+                    # Update global best if this is better
                     if val_metrics['accuracy'] > self.best_performance:
                         self.best_performance = val_metrics['accuracy']
                         self._save_checkpoint("minerva_best.pt", val_metrics['accuracy'])
@@ -1661,6 +1673,37 @@ class MinervaTrainer:
             'loss': avg_loss
         }
     
+    def _load_stage_checkpoint(self, stage_name: str):
+        """Load stage-specific checkpoint if it exists"""
+        stage_checkpoint_path = os.path.join(self.config.checkpoint_dir, f"minerva_stage_{stage_name}.pt")
+        
+        if os.path.exists(stage_checkpoint_path):
+            print(f"Loading stage checkpoint: minerva_stage_{stage_name}.pt")
+            checkpoint = torch.load(stage_checkpoint_path, map_location=self.device)
+            
+            # Load model state
+            self.model.load_state_dict(checkpoint['model_state_dict'])
+            self.ema_model.load_state_dict(checkpoint['ema_model_state_dict'])
+            
+            # Load optimizer state
+            self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            
+            # Load scheduler state
+            if 'scheduler_state_dict' in checkpoint:
+                self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+            
+            # Load AMP scaler state
+            if self.config.use_amp and 'scaler_state_dict' in checkpoint:
+                self.scaler.load_state_dict(checkpoint['scaler_state_dict'])
+            
+            # Update global step and performance tracking
+            self.global_step = checkpoint.get('global_step', 0)
+            stage_performance = checkpoint.get('performance', 0.0)
+            
+            print(f"✓ Loaded stage {stage_name} checkpoint with {stage_performance:.2f}% performance")
+        else:
+            print(f"No existing checkpoint found for stage {stage_name}, starting fresh")
+
     def _save_checkpoint(self, filename: str, performance: float):
         """Save model checkpoint"""
         checkpoint = {
