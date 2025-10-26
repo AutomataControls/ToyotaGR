@@ -16,8 +16,9 @@ MinervaRacingAdapter = minerva.train_racing.MinervaRacingAdapter
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"🧠 Training MINERVA on {device}...")
 
-minerva = MinervaV6Enhanced().to(device)
-minerva_racing = MinervaRacingAdapter(minerva).to(device)
+minerva = MinervaV6Enhanced()
+minerva_racing = MinervaRacingAdapter(minerva)
+minerva_racing = minerva_racing.to(device)
 optimizer = torch.optim.AdamW(minerva_racing.parameters(), lr=1e-4)
 
 os.makedirs('racing_models/checkpoints', exist_ok=True)
