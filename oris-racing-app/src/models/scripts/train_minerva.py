@@ -811,10 +811,10 @@ class MinervaRacingDataset(Dataset):
         # Augmentation factor - create 10x more data
         augmentation_factor = 10
         
-        for _ in range(augmentation_factor):
+        for aug_idx in range(augmentation_factor):
             for sample in self.samples:
                 # Create augmented version
-                aug_sample = self._augment_sample(sample.copy())
+                aug_sample = self._augment_sample(sample.copy(), aug_idx)
                 if aug_sample:
                     augmented_samples.append(aug_sample)
         
@@ -825,119 +825,6 @@ class MinervaRacingDataset(Dataset):
         import random
         random.shuffle(self.samples)
     
-    def _augment_sample(self, sample: Dict) -> Optional[Dict]:
-        """Augment a single sample with various transformations"""
-        try:
-            grid = sample['grid'].clone()
-            labels = sample['labels'].copy()
-            scenario_type = sample['scenario_type']
-            
-            # Apply random augmentations
-            aug_type = np.random.choice([
-                'noise', 'shift', 'scale', 'flip', 'rotate', 
-                'mixup', 'cutout', 'time_warp', 'speed_perturb'
-            ])
-            
-            if aug_type == 'noise':
-                # Add Gaussian noise to telemetry channels
-                noise = torch.randn_like(grid) * 0.1
-                grid = grid + noise
-                grid = torch.clamp(grid, 0, 10)
-                
-            elif aug_type == 'shift':
-                # Time shift the data
-                shift = np.random.randint(-5, 5)
-                grid = torch.roll(grid, shift, dims=2)
-                
-            elif aug_type == 'scale':
-                # Scale telemetry values
-                scale_factor = np.random.uniform(0.8, 1.2)
-                grid = grid * scale_factor
-                
-            elif aug_type == 'flip':
-                # Flip track direction (simulate reverse track)
-                grid = torch.flip(grid, dims=[2])
-                
-            elif aug_type == 'rotate':
-                # Rotate telemetry patterns
-                grid = torch.rot90(grid, k=np.random.randint(1, 4), dims=[1, 2])
-                
-            elif aug_type == 'mixup':
-                # Mix with another random sample
-                if len(self.samples) > 1:
-                    other_idx = np.random.randint(0, len(self.samples))
-                    other = self.samples[other_idx]
-                    if other['scenario_type'] == scenario_type:
-                        alpha = np.random.beta(1.0, 1.0)
-                        grid = alpha * grid + (1 - alpha) * other['grid']
-                        # Mix labels for continuous values
-                        for key in ['fuel_save']:
-                            if key in labels and key in other['labels']:
-                                labels[key] = alpha * labels[key] + (1 - alpha) * other['labels'][key]
-                                
-            elif aug_type == 'cutout':
-                # Random cutout (simulate sensor failure)
-                cutout_size = np.random.randint(3, 8)
-                start_row = np.random.randint(0, grid.shape[0] - cutout_size)
-                start_col = np.random.randint(0, grid.shape[1] - cutout_size)
-                grid[start_row:start_row+cutout_size, start_col:start_col+cutout_size] = 0
-                
-            elif aug_type == 'time_warp':
-                # Time warping (simulate different racing speeds)
-                warp_factor = np.random.uniform(0.8, 1.2)
-                new_size = int(grid.shape[2] * warp_factor)
-                if new_size > 10 and new_size < 50:
-                    grid = F.interpolate(
-                        grid.unsqueeze(0).unsqueeze(0), 
-                        size=(grid.shape[1], new_size), 
-                        mode='bilinear',
-                        align_corners=False
-                    ).squeeze()
-                    # Resize back to original
-                    grid = F.interpolate(
-                        grid.unsqueeze(0).unsqueeze(0), 
-                        size=(grid.shape[1], 30), 
-                        mode='bilinear',
-                        align_corners=False
-                    ).squeeze()
-                    
-            elif aug_type == 'speed_perturb':
-                # Perturb speed-related channels
-                speed_noise = torch.randn(grid.shape[2]) * 0.2
-                if grid.shape[0] > 0:
-                    grid[0, :] = grid[0, :] + speed_noise
-                
-            # Augment labels slightly for diversity
-            if scenario_type == 'pit_strategy':
-                # Randomly flip pit decision with small probability
-                if np.random.rand() < 0.1:
-                    labels['pit_decision'] = 1 - labels['pit_decision']
-                # Vary tire choice
-                if np.random.rand() < 0.2:
-                    labels['tire_choice'] = np.random.randint(0, 3)
-                    
-            elif scenario_type == 'overtake':
-                # Add variability to overtake decisions
-                if np.random.rand() < 0.15:
-                    labels['overtake_decision'] = 1 - labels['overtake_decision']
-                    
-            elif scenario_type == 'fuel_management':
-                # Vary fuel save target
-                labels['fuel_save'] = np.clip(
-                    labels['fuel_save'] + np.random.normal(0, 0.05), 
-                    0, 1
-                )
-                
-            return {
-                'grid': grid,
-                'track_id': sample['track_id'],
-                'scenario_type': scenario_type,
-                'labels': labels
-            }
-            
-        except Exception as e:
-            # Return None if augmentation fails
-            return None
     
     def __len__(self) -> int:
         return len(self.samples) * (self.config.augmentation_factor if self.augment else 1)
