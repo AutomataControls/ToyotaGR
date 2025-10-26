@@ -49,8 +49,10 @@ class TransformationPredictor(nn.Module):
         return self.predictor(x)
 
 class EnhancedMinervaNet(nn.Module):
-    def __init__(self, hidden_size=256):
+    def __init__(self, max_grid_size=30, hidden_size=256):
         super().__init__()
+        self.max_grid_size = max_grid_size
+        self.hidden_size = hidden_size
         self.encoder = nn.Conv2d(10, hidden_size, 3, padding=1)
 
 
