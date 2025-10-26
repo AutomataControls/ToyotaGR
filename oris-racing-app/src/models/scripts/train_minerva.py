@@ -495,6 +495,12 @@ class MinervaRacingDataset(Dataset):
         """Encode race state into MINERVA's 30x30 grid format"""
         grid = torch.zeros(30, 30)
         
+        # Ensure valid values
+        fuel_level = max(0.0, min(1.0, fuel_level))
+        for key in tire_deg:
+            if isinstance(tire_deg[key], (int, float)):
+                tire_deg[key] = max(0.0, min(1.0, tire_deg[key]))
+        
         # Rows 0-9: Speed and position data
         if telemetry.shape[0] > 0 and telemetry.shape[1] > 0:
             speed_profile = telemetry[:, 0] if telemetry.shape[1] > 0 else telemetry
@@ -1256,6 +1262,14 @@ class MinervaTrainer:
             
             # Gradient accumulation
             if (batch_idx + 1) % self.config.gradient_accumulation == 0:
+                # Check for NaN loss first
+                if torch.isnan(batch_loss):
+                    print(f"Warning: NaN loss detected at step {self.global_step}, skipping update")
+                    self.optimizer.zero_grad()
+                    if self.config.use_amp:
+                        self.scaler.update()  # Still need to update scaler
+                    continue
+                
                 # Gradient clipping
                 if self.config.use_amp:
                     self.scaler.unscale_(self.optimizer)
@@ -1266,10 +1280,12 @@ class MinervaTrainer:
                     self.config.gradient_clip
                 )
                 
-                # Skip update if gradients are NaN
-                if torch.isnan(grad_norm):
-                    print(f"Warning: NaN gradients detected at step {self.global_step}, skipping update")
+                # Check if gradients are valid
+                if torch.isnan(grad_norm) or torch.isinf(grad_norm):
+                    print(f"Warning: Invalid gradients detected at step {self.global_step}, skipping update")
                     self.optimizer.zero_grad()
+                    if self.config.use_amp:
+                        self.scaler.update()  # Still need to update scaler
                     continue
                 
                 # Optimizer step
