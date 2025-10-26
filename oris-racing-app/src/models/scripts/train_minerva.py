@@ -126,7 +126,6 @@ class MinervaRacingDataset(Dataset):
         self.telemetry_cache = {}
         
         # Load all telemetry data
-        print(f"Loading racing telemetry for {stage}...")
         self._load_telemetry_data()
         
         # Create training samples with strategic patterns
@@ -147,7 +146,6 @@ class MinervaRacingDataset(Dataset):
     
     def _load_telemetry_data(self):
         """Load telemetry CSV files from all tracks"""
-        print(f"  Looking for data in: {self.config.data_root}")
         
         for track in self.config.tracks:
             track_path = os.path.join(self.config.data_root, track)
@@ -155,7 +153,6 @@ class MinervaRacingDataset(Dataset):
                 print(f"  Track folder not found: {track_path}")
                 continue
             
-            print(f"  Searching in {track}...")
             
             # Find all telemetry files
             telemetry_files = glob.glob(os.path.join(track_path, "**/telemetry*.csv"), recursive=True)
@@ -165,8 +162,6 @@ class MinervaRacingDataset(Dataset):
             if not telemetry_files:
                 csv_files = glob.glob(os.path.join(track_path, "**/*.csv"), recursive=True)
                 telemetry_files.extend(csv_files[:5])  # Take first 5 CSV files
-                if csv_files:
-                    print(f"    Found {len(csv_files)} CSV files")
             
             for tel_file in telemetry_files:
                 try:
@@ -176,7 +171,6 @@ class MinervaRacingDataset(Dataset):
                         # Convert long format to wide format if needed
                         df = self._convert_to_wide_format(df)
                         self.telemetry_cache[tel_file] = df
-                        print(f"    Loaded {os.path.basename(tel_file)}: {len(df)} records")
                 except Exception as e:
                     print(f"    Error loading {tel_file}: {e}")
         
@@ -274,7 +268,6 @@ class MinervaRacingDataset(Dataset):
                     if 'accx_can' in wide_df.columns:
                         wide_df['pbrake_f'] = (-wide_df['accx_can'].clip(-3, 0) * 33).clip(0, 100)
                 
-                print(f"    Converted from long to wide format: {len(wide_df)} rows, columns: {list(wide_df.columns)[:8]}...")
                 return wide_df
             except Exception as e:
                 print(f"    Could not convert to wide format: {e}")
@@ -285,7 +278,6 @@ class MinervaRacingDataset(Dataset):
     
     def _create_synthetic_data(self):
         """Create synthetic telemetry data for testing"""
-        print(f"  Generating synthetic telemetry data...")
         for i, track in enumerate(self.config.tracks[:3]):  # Create data for first 3 tracks
             # Create synthetic DataFrame
             num_laps = 30
@@ -933,7 +925,8 @@ class MinervaTrainer:
         # Initialize model
         self._initialize_model()
         
-        # Initialize datasets
+        # Initialize datasets  
+        print(f"Loading racing datasets...")
         self._initialize_datasets()
         
         # Initialize training components
@@ -1003,7 +996,6 @@ class MinervaTrainer:
     
     def _initialize_datasets(self):
         """Initialize training and validation datasets"""
-        print(f"Loading racing datasets...")
         
         # Create datasets
         self.train_dataset = MinervaRacingDataset(
