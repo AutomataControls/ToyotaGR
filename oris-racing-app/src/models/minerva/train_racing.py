@@ -128,7 +128,9 @@ class MinervaRacingAdapter(nn.Module):
         track_emb = self.track_embedding(torch.tensor([track_id], device=device))
         
         # Process through MINERVA to get strategic features
-        minerva_output = self.minerva(input_tensor, mode='inference')
+        # Use no_grad to prevent gradient flow through base model
+        with torch.no_grad():
+            minerva_output = self.minerva(input_tensor, mode='inference')
         
         # Extract the strategic features from MINERVA's output
         if 'strategic_features' in minerva_output:

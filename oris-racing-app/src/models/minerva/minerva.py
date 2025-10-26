@@ -84,15 +84,16 @@ class DeepStrategicTransformer(nn.Module):
             torch.randn(max_grid_size, max_grid_size, d_model) * 0.01
         )
         
-        # Deep strategic transformer layers
+        # Deep strategic transformer layers with gradient stabilization
         self.transformer_layers = nn.ModuleList([
             nn.TransformerEncoderLayer(
                 d_model=d_model,
                 nhead=num_heads,
                 dim_feedforward=d_model * 4,
-                dropout=0.1,
+                dropout=0.2,  # Increased dropout
                 activation='gelu',
-                batch_first=True
+                batch_first=True,
+                norm_first=True  # Pre-norm for stability
             ) for _ in range(num_layers)
         ])
         
@@ -468,6 +469,24 @@ class MinervaV6Enhanced(nn.Module):
         self.synthesis_mix = nn.Parameter(torch.tensor(0.3))
         
         self.description = "Ultimate Strategic Intelligence Master with Complete Grid Mastery and Advanced Program Synthesis"
+        
+        # Initialize weights properly to prevent gradient explosion
+        self._init_weights()
+    
+    def _init_weights(self):
+        """Initialize weights to prevent gradient explosion"""
+        for module in self.modules():
+            if isinstance(module, nn.Linear):
+                nn.init.xavier_uniform_(module.weight, gain=0.5)
+                if module.bias is not None:
+                    nn.init.zeros_(module.bias)
+            elif isinstance(module, nn.Conv2d) or isinstance(module, nn.ConvTranspose2d):
+                nn.init.kaiming_normal_(module.weight, mode='fan_out', nonlinearity='relu')
+                if module.bias is not None:
+                    nn.init.zeros_(module.bias)
+            elif isinstance(module, nn.LayerNorm) or isinstance(module, nn.BatchNorm2d):
+                nn.init.ones_(module.weight)
+                nn.init.zeros_(module.bias)
     
     def load_compatible_weights(self, checkpoint_path: str):
         """Load weights from existing MINERVA model while preserving architecture"""
@@ -518,8 +537,10 @@ class MinervaV6Enhanced(nn.Module):
             base_features = original_output['features']
             base_prediction = original_output['predicted_output']
         
-        # ENHANCE: Deep strategic transformer processing
+        # ENHANCE: Deep strategic transformer processing with gradient clipping
+        base_features = base_features.detach() if mode == 'training' else base_features
         enhanced_features, strategic_info = self.deep_strategic_transformer(base_features)
+        enhanced_features = torch.clamp(enhanced_features, -10, 10)  # Prevent explosion
         
         # ENHANCE: Mega pattern memory processing
         pattern_memory = self.mega_pattern_memory(enhanced_features)
@@ -546,17 +567,18 @@ class MinervaV6Enhanced(nn.Module):
         # Combine all enhanced features for final prediction
         B, C, H, W = enhanced_features.shape
         
-        # Multi-scale feature combination
-        coordinated_spatial = ensemble_output['coordinated_features'].unsqueeze(-1).unsqueeze(-1).expand(-1, -1, H, W)
-        pattern_spatial = pattern_memory['strategic_parameters'].unsqueeze(-1).unsqueeze(-1).expand(-1, 64, H, W)
-        synthesis_spatial = program_synthesis['synthesis_params'].unsqueeze(-1).unsqueeze(-1).expand(-1, 96, H, W)
+        # Multi-scale feature combination with normalization
+        coordinated_spatial = F.layer_norm(ensemble_output['coordinated_features'], [C]).unsqueeze(-1).unsqueeze(-1).expand(-1, -1, H, W)
+        pattern_spatial = F.layer_norm(pattern_memory['strategic_parameters'], [64]).unsqueeze(-1).unsqueeze(-1).expand(-1, 64, H, W)
+        synthesis_spatial = F.layer_norm(program_synthesis['synthesis_params'], [96]).unsqueeze(-1).unsqueeze(-1).expand(-1, 96, H, W)
         
+        # Normalize features before concatenation to prevent gradient explosion
         combined_features = torch.cat([
-            base_features,           # Original MINERVA features
-            enhanced_features,       # Deep strategic features
-            coordinated_spatial,     # Ensemble coordination
-            pattern_spatial,         # Pattern memory
-            synthesis_spatial        # Program synthesis
+            F.layer_norm(base_features, [C, H, W]),           # Original MINERVA features
+            F.layer_norm(enhanced_features, [C, H, W]),       # Deep strategic features
+            coordinated_spatial,     # Ensemble coordination (already normalized)
+            pattern_spatial,         # Pattern memory (already normalized)
+            synthesis_spatial        # Program synthesis (already normalized)
         ], dim=1)
         
         # Enhanced V6 prediction
