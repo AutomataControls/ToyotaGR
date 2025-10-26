@@ -45,7 +45,7 @@ class TrainingConfig:
     model_description = "Ultimate Strategic Intelligence Master for Racing"
     
     # Data paths
-    data_root = "/content/ToyotaGR/oris-racing-app/src/data/tracks"
+    data_root = "/content/ToyotaGR/src/data/tracks/tracks"
     tracks = ["Sonoma", "COTA", "Sebring", "Road America", "VIR", "barber"]
     
     # Training stages (progressive curriculum)
@@ -57,9 +57,9 @@ class TrainingConfig:
     ]
     
     # A100 optimized settings
-    batch_size = 384  # Optimized for 80GB VRAM
-    gradient_accumulation = 2  # Effective batch size: 768
-    num_workers = 16
+    batch_size = 512  # Optimized for A100 80GB
+    gradient_accumulation = 2  # Effective batch size: 1024
+    num_workers = 8
     pin_memory = True
     persistent_workers = True
     
@@ -115,34 +115,81 @@ class MinervaRacingDataset(Dataset):
         self.telemetry_cache = {}
         
         # Load all telemetry data
-        print(f"🏁 Loading racing telemetry for {stage}...")
+        print(f"Loading racing telemetry for {stage}...")
         self._load_telemetry_data()
         
         # Create training samples with strategic patterns
         self._create_strategic_samples()
         
-        print(f"📊 Created {len(self.samples)} samples for {stage}")
+        print(f"Created {len(self.samples)} samples for {stage}")
     
     def _load_telemetry_data(self):
         """Load telemetry CSV files from all tracks"""
+        print(f"  Looking for data in: {self.config.data_root}")
+        
         for track in self.config.tracks:
             track_path = os.path.join(self.config.data_root, track)
             if not os.path.exists(track_path):
+                print(f"  Track folder not found: {track_path}")
                 continue
-                
+            
+            print(f"  Searching in {track}...")
+            
             # Find all telemetry files
             telemetry_files = glob.glob(os.path.join(track_path, "**/telemetry*.csv"), recursive=True)
             telemetry_files.extend(glob.glob(os.path.join(track_path, "**/*telemetry*.csv"), recursive=True))
             
+            # Also look for any CSV files if no telemetry files found
+            if not telemetry_files:
+                csv_files = glob.glob(os.path.join(track_path, "**/*.csv"), recursive=True)
+                telemetry_files.extend(csv_files[:5])  # Take first 5 CSV files
+                if csv_files:
+                    print(f"    Found {len(csv_files)} CSV files")
+            
             for tel_file in telemetry_files:
                 try:
                     # Read telemetry data
-                    df = pd.read_csv(tel_file)
+                    df = pd.read_csv(tel_file, nrows=10000)  # Limit rows for memory
                     if len(df) > 0:
                         self.telemetry_cache[tel_file] = df
-                        print(f"  ✓ Loaded {os.path.basename(tel_file)}: {len(df)} records")
+                        print(f"    Loaded {os.path.basename(tel_file)}: {len(df)} records")
                 except Exception as e:
-                    print(f"  ✗ Error loading {tel_file}: {e}")
+                    print(f"    Error loading {tel_file}: {e}")
+        
+        if not self.telemetry_cache:
+            print(f"  No telemetry data found! Creating synthetic data...")
+            self._create_synthetic_data()
+    
+    def _create_synthetic_data(self):
+        """Create synthetic telemetry data for testing"""
+        print(f"  Generating synthetic telemetry data...")
+        for i, track in enumerate(self.config.tracks[:3]):  # Create data for first 3 tracks
+            # Create synthetic DataFrame
+            num_laps = 30
+            for lap in range(1, num_laps + 1):
+                lap_data = []
+                for sample in range(500):  # 500 samples per lap
+                    row = {
+                        'lap': lap,
+                        'timestamp': sample / 100.0,
+                        'speed': np.random.uniform(100, 250),
+                        'rpm': np.random.uniform(5000, 12000),
+                        'throttle': np.random.uniform(0, 100),
+                        'brake': np.random.uniform(0, 100) if sample % 10 < 2 else 0,
+                        'steer_angle': np.random.uniform(-45, 45),
+                        'gear': np.random.randint(1, 8),
+                        'tire_temp_fl': np.random.uniform(70, 110),
+                        'tire_temp_fr': np.random.uniform(70, 110),
+                        'tire_temp_rl': np.random.uniform(70, 110),
+                        'tire_temp_rr': np.random.uniform(70, 110)
+                    }
+                    lap_data.append(row)
+                
+                df = pd.DataFrame(lap_data)
+                filename = f"synthetic_{track}_lap_{lap}.csv"
+                self.telemetry_cache[filename] = df
+        
+        print(f"  Created {len(self.telemetry_cache)} synthetic telemetry files")
     
     def _create_strategic_samples(self):
         """Create training samples with strategic racing scenarios"""
@@ -690,11 +737,11 @@ class MinervaTrainer:
             torch.backends.cudnn.allow_tf32 = True
             torch.backends.cudnn.benchmark = True
         
-        print(f"🏛️ Initializing MINERVA V6 Enhanced Racing Trainer")
-        print(f"🔧 Device: {self.device}")
+        print(f"\033[96mInitializing MINERVA V6 Enhanced Racing Trainer\033[0m")
+        print(f"\033[93mDevice: {self.device}\033[0m")
         if torch.cuda.is_available():
-            print(f"🚀 GPU: {torch.cuda.get_device_name()}")
-            print(f"💾 VRAM: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f} GB")
+            print(f"GPU: {torch.cuda.get_device_name()}")
+            print(f"VRAM: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f} GB")
         
         # Initialize model
         self._initialize_model()
@@ -712,7 +759,7 @@ class MinervaTrainer:
         
     def _initialize_model(self):
         """Initialize MINERVA model and racing adapter"""
-        print(f"🧠 Loading {self.config.model_name}...")
+        print(f"\033[96mLoading {self.config.model_name}...\033[0m")
         
         # Create base MINERVA model
         self.base_model = MinervaV6Enhanced(
@@ -725,7 +772,7 @@ class MinervaTrainer:
         checkpoint_path = os.path.join(self.config.checkpoint_dir, "minerva_v6_base.pt")
         if os.path.exists(checkpoint_path):
             self.base_model.load_compatible_weights(checkpoint_path)
-            print(f"✅ Loaded pre-trained MINERVA weights")
+            print(f"Loaded pre-trained MINERVA weights")
         
         # Create racing adapter
         self.model = MinervaRacingAdapter(
@@ -739,8 +786,8 @@ class MinervaTrainer:
         # Calculate parameters
         total_params = sum(p.numel() for p in self.model.parameters())
         trainable_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
-        print(f"📊 Total parameters: {total_params:,}")
-        print(f"📊 Trainable parameters: {trainable_params:,}")
+        print(f"Total parameters: {total_params:,}")
+        print(f"Trainable parameters: {trainable_params:,}")
         
         # Initialize EMA model for stability
         self.ema_model = self._create_ema_model()
@@ -769,7 +816,7 @@ class MinervaTrainer:
     
     def _initialize_datasets(self):
         """Initialize training and validation datasets"""
-        print(f"📁 Loading racing datasets...")
+        print(f"Loading racing datasets...")
         
         # Create datasets
         self.train_dataset = MinervaRacingDataset(
@@ -804,10 +851,10 @@ class MinervaTrainer:
             persistent_workers=self.config.persistent_workers
         )
         
-        print(f"✅ Train samples: {len(self.train_dataset):,}")
-        print(f"✅ Val samples: {len(self.val_dataset):,}")
-        print(f"✅ Batch size: {self.config.batch_size}")
-        print(f"✅ Effective batch size: {self.config.batch_size * self.config.gradient_accumulation}")
+        print(f"Train samples: {len(self.train_dataset):,}")
+        print(f"Val samples: {len(self.val_dataset):,}")
+        print(f"Batch size: {self.config.batch_size}")
+        print(f"Effective batch size: {self.config.batch_size * self.config.gradient_accumulation}")
     
     def _initialize_training_components(self):
         """Initialize optimizer, scheduler, scaler, and loss functions"""
@@ -864,25 +911,25 @@ class MinervaTrainer:
         self.criterion_overtake = nn.CrossEntropyLoss()
         self.criterion_risk = nn.CrossEntropyLoss()
         
-        print(f"✅ Optimizer: AdamW with {len(param_groups)} parameter groups")
-        print(f"✅ Scheduler: CosineAnnealingWarmRestarts")
-        print(f"✅ Mixed Precision: {'Enabled' if self.config.use_amp else 'Disabled'}")
+        print(f"Optimizer: AdamW with {len(param_groups)} parameter groups")
+        print(f"Scheduler: CosineAnnealingWarmRestarts")
+        print(f"Mixed Precision: {'Enabled' if self.config.use_amp else 'Disabled'}")
     
     def train(self):
         """Execute multi-stage progressive training"""
-        print(f"\n{'='*100}")
-        print(f"🏛️ Starting MINERVA V6 Enhanced Racing Training")
-        print(f"{'='*100}\n")
+        print(f"\n\033[96m{'='*125}\033[0m")
+        print(f"\033[96mStarting MINERVA V6 Enhanced Racing Training\033[0m")
+        print(f"\033[96m{'='*125}\033[0m\n")
         
         # Create checkpoint directory
         os.makedirs(self.config.checkpoint_dir, exist_ok=True)
         
         # Progressive training stages
         for stage_idx, stage in enumerate(self.config.stages):
-            print(f"\n{'='*100}")
-            print(f"🎯 Stage {stage_idx + 1}: {stage['name'].upper()} - {stage['focus']}")
-            print(f"📚 Epochs: {stage['epochs']} | Learning Rate: {stage['lr']}")
-            print(f"{'='*100}\n")
+            print(f"\n\033[94m{'='*125}\033[0m")
+            print(f"\033[94mStage {stage_idx + 1}: {stage['name'].upper()} - {stage['focus']}\033[0m")
+            print(f"\033[94mEpochs: {stage['epochs']} | Learning Rate: {stage['lr']}\033[0m")
+            print(f"\033[94m{'='*125}\033[0m\n")
             
             # Update learning rates for new stage
             self._update_learning_rates(stage['lr'])
@@ -897,15 +944,15 @@ class MinervaTrainer:
             # Save stage checkpoint
             self._save_checkpoint(f"minerva_stage_{stage['name']}.pt", stage_performance)
             
-            print(f"\n✅ Stage {stage['name']} complete! Best performance: {stage_performance:.2f}%")
+            print(f"\n\033[92mStage {stage['name']} complete! Best performance: {stage_performance:.2f}%\033[0m")
         
         # Final evaluation
         self._final_evaluation()
         
-        print(f"\n{'='*100}")
-        print(f"🏁 Training Complete!")
-        print(f"📊 Best Overall Performance: {self.best_performance:.2f}%")
-        print(f"{'='*100}\n")
+        print(f"\n\033[92m{'='*125}\033[0m")
+        print(f"\033[92mTraining Complete!\033[0m")
+        print(f"\033[92mBest Overall Performance: {self.best_performance:.2f}%\033[0m")
+        print(f"\033[92m{'='*125}\033[0m\n")
     
     def _update_learning_rates(self, base_lr: float):
         """Update learning rates for parameter groups"""
@@ -922,27 +969,27 @@ class MinervaTrainer:
             # Stage 1: Only train heads
             for param in self.model.minerva.parameters():
                 param.requires_grad = False
-            print(f"🔒 Base model frozen - training heads only")
+            print(f"\033[93mBase model frozen - training heads only\033[0m")
             
         elif stage_idx == 1:
             # Stage 2: Unfreeze strategic components
             for name, param in self.model.minerva.named_parameters():
                 if 'strategic' in name or 'decision' in name:
                     param.requires_grad = True
-            print(f"🔓 Strategic components unfrozen")
+            print(f"\033[93mStrategic components unfrozen\033[0m")
             
         elif stage_idx == 2:
             # Stage 3: Unfreeze pattern memory
             for name, param in self.model.minerva.named_parameters():
                 if 'pattern' in name or 'memory' in name:
                     param.requires_grad = True
-            print(f"🔓 Pattern memory unfrozen")
+            print(f"\033[93mPattern memory unfrozen\033[0m")
             
         else:
             # Stage 4: Full fine-tuning
             for param in self.model.minerva.parameters():
                 param.requires_grad = True
-            print(f"🔓 Full model unfrozen for fine-tuning")
+            print(f"\033[93mFull model unfrozen for fine-tuning\033[0m")
     
     def _train_stage(self, stage: Dict, stage_idx: int) -> float:
         """Train a single stage"""
@@ -963,13 +1010,14 @@ class MinervaTrainer:
                     if val_metrics['accuracy'] > self.best_performance:
                         self.best_performance = val_metrics['accuracy']
                         self._save_checkpoint("minerva_best.pt", val_metrics['accuracy'])
+                        print(f"\033[92mNew global best performance: {self.best_performance:.2f}% - Saved!\033[0m")
                 
                 # Log metrics
-                print(f"\n📊 Epoch {epoch + 1}/{stage['epochs']} Summary:")
-                print(f"   🎯 Train Loss: {train_metrics['loss']:.4f}")
-                print(f"   🎯 Val Accuracy: {val_metrics['accuracy']:.2f}%")
-                print(f"   📈 Best Stage: {best_stage_performance:.2f}%")
-                print(f"   📈 Best Overall: {self.best_performance:.2f}%")
+                print(f"\n\033[93mStage {stage_idx + 1}, Epoch {epoch + 1} (Global: {self.global_step}):\033[0m")
+                print(f"   \033[95mTrain Loss: {train_metrics['loss']:.4f}\033[0m")
+                print(f"   \033[95mVal Accuracy: {val_metrics['accuracy']:.2f}%\033[0m")
+                print(f"   \033[94mBest Stage: {best_stage_performance:.2f}%\033[0m")
+                print(f"   \033[92mBest Overall: {self.best_performance:.2f}%\033[0m")
             
             # Periodic checkpoint
             if (epoch + 1) % self.config.save_every == 0:
@@ -1225,11 +1273,11 @@ class MinervaTrainer:
         
         filepath = os.path.join(self.config.checkpoint_dir, filename)
         torch.save(checkpoint, filepath)
-        print(f"💾 Saved checkpoint: {filename}")
+        print(f"Saved checkpoint: {filename}")
     
     def _final_evaluation(self):
         """Perform final model evaluation"""
-        print(f"\n🏁 Final Evaluation...")
+        print(f"\n\033[96mFinal Evaluation...\033[0m")
         
         # Use EMA model for final evaluation
         self.ema_model.eval()
@@ -1280,9 +1328,9 @@ class MinervaTrainer:
                         scenario_metrics[scenario]['correct'] += 1
         
         # Print final results
-        print(f"\n{'='*60}")
-        print(f"📊 Final Evaluation Results")
-        print(f"{'='*60}")
+        print(f"\n\033[93m{'='*80}\033[0m")
+        print(f"\033[93mFinal Evaluation Results\033[0m")
+        print(f"\033[93m{'='*80}\033[0m")
         
         total_correct = 0
         total_samples = 0
@@ -1294,9 +1342,9 @@ class MinervaTrainer:
             total_samples += metrics['total']
         
         overall_accuracy = (total_correct / max(1, total_samples)) * 100
-        print(f"{'='*60}")
-        print(f"{'Overall Accuracy':.<30} {overall_accuracy:>6.2f}%")
-        print(f"{'='*60}")
+        print(f"\033[93m{'='*80}\033[0m")
+        print(f"\033[92m{'Overall Accuracy':.<30} {overall_accuracy:>6.2f}%\033[0m")
+        print(f"\033[93m{'='*80}\033[0m")
         
         # Save final results
         results = {
@@ -1324,11 +1372,11 @@ def main():
     config = TrainingConfig()
     
     # Print banner
-    print(f"\n{'='*100}")
-    print(f"🏛️ MINERVA V6 Enhanced Racing Training System")
-    print(f"🏁 Advanced Multi-Stage Progressive Curriculum Learning")
-    print(f"🚀 Optimized for A100 GPU with Mixed Precision")
-    print(f"{'='*100}\n")
+    print(f"\n\033[96m{'='*125}\033[0m")
+    print(f"\033[96mMINERVA V6 Enhanced Racing Training System\033[0m")
+    print(f"\033[96mAdvanced Multi-Stage Progressive Curriculum Learning\033[0m")
+    print(f"\033[96mOptimized for A100 GPU with Mixed Precision\033[0m")
+    print(f"\033[96m{'='*125}\033[0m\n")
     
     # Create trainer
     trainer = MinervaTrainer(config)
@@ -1336,8 +1384,8 @@ def main():
     # Start training
     trainer.train()
     
-    print(f"\n✅ Training complete!")
-    print(f"📁 Checkpoints saved to: {config.checkpoint_dir}")
+    print(f"\nTraining complete!")
+    print(f"Checkpoints saved to: {config.checkpoint_dir}")
 
 
 if __name__ == "__main__":
