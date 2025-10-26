@@ -171,8 +171,10 @@ class MinervaRacingDataset(Dataset):
             for tel_file in telemetry_files:
                 try:
                     # Read telemetry data
-                    df = pd.read_csv(tel_file, nrows=10000)  # Limit rows for memory
+                    df = pd.read_csv(tel_file, nrows=50000)  # Increased for more data
                     if len(df) > 0:
+                        # Convert long format to wide format if needed
+                        df = self._convert_to_wide_format(df)
                         self.telemetry_cache[tel_file] = df
                         print(f"    Loaded {os.path.basename(tel_file)}: {len(df)} records")
                 except Exception as e:
@@ -181,6 +183,62 @@ class MinervaRacingDataset(Dataset):
         if not self.telemetry_cache:
             print(f"  No telemetry data found! Creating synthetic data...")
             self._create_synthetic_data()
+    
+    def _convert_to_wide_format(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Convert long format telemetry data to wide format"""
+        # Check if data is in long format (has telemetry_name and telemetry_value columns)
+        if 'telemetry_name' in df.columns and 'telemetry_value' in df.columns:
+            # Pivot the data to wide format
+            try:
+                # Create a unique index for each row
+                if 'lap' in df.columns and 'timestamp' in df.columns:
+                    df['row_id'] = df.groupby(['lap', 'timestamp']).cumcount()
+                    wide_df = df.pivot_table(
+                        index=['lap', 'timestamp', 'row_id'],
+                        columns='telemetry_name',
+                        values='telemetry_value',
+                        aggfunc='first'
+                    ).reset_index()
+                    wide_df = wide_df.drop('row_id', axis=1)
+                elif 'timestamp' in df.columns:
+                    df['row_id'] = df.groupby('timestamp').cumcount()
+                    wide_df = df.pivot_table(
+                        index=['timestamp', 'row_id'],
+                        columns='telemetry_name',
+                        values='telemetry_value',
+                        aggfunc='first'
+                    ).reset_index()
+                    wide_df = wide_df.drop('row_id', axis=1)
+                else:
+                    # Fallback - group by index
+                    return df
+                
+                # Rename columns to match expected names
+                column_map = {
+                    'vehicle_speed': 'Speed',
+                    'speed': 'Speed',
+                    'engine_rpm': 'nmot',
+                    'rpm': 'nmot',
+                    'throttle_position': 'ath',
+                    'brake_pressure': 'pbrake_f',
+                    'steering_angle': 'Steering_Angle',
+                    'lateral_g': 'accy_can',
+                    'longitudinal_g': 'accx_can'
+                }
+                
+                wide_df = wide_df.rename(columns=column_map)
+                
+                # Fill missing values
+                wide_df = wide_df.ffill().fillna(0)
+                
+                print(f"    Converted from long to wide format: {len(wide_df)} rows, columns: {list(wide_df.columns)[:5]}...")
+                return wide_df
+            except Exception as e:
+                print(f"    Could not convert to wide format: {e}")
+                return df
+        else:
+            # Already in wide format or different format
+            return df
     
     def _create_synthetic_data(self):
         """Create synthetic telemetry data for testing"""
@@ -221,22 +279,26 @@ class MinervaRacingDataset(Dataset):
             track_id = self.config.tracks.index(track_name) if track_name in self.config.tracks else 0
             
             # Group by lap for strategic analysis
-            if 'lap' in df.columns:
+            if 'lap' in df.columns and df['lap'].nunique() > 1:
                 laps = df['lap'].unique()
-                for lap in laps:
+                for lap in laps[:30]:  # Process up to 30 laps
                     lap_data = df[df['lap'] == lap]
                     if len(lap_data) > self.config.sequence_length:
                         # Create multiple samples per lap for different strategic scenarios
                         for scenario in self._generate_scenarios(lap_data, track_id, lap):
-                            self.samples.append(scenario)
+                            if scenario:
+                                self.samples.append(scenario)
             else:
-                # If no lap column, create samples from chunks of data
+                # If no lap column or single lap, create samples from chunks of data
                 chunk_size = self.config.sequence_length * 2
-                for i in range(0, len(df) - chunk_size, chunk_size // 2):
-                    chunk = df.iloc[i:i+chunk_size]
-                    lap_num = i // chunk_size + 1
+                num_chunks = min(50, (len(df) - chunk_size) // (chunk_size // 2))  # Limit chunks
+                for i in range(num_chunks):
+                    start_idx = i * (chunk_size // 2)
+                    chunk = df.iloc[start_idx:start_idx+chunk_size]
+                    lap_num = i + 1
                     for scenario in self._generate_scenarios(chunk, track_id, lap_num):
-                        self.samples.append(scenario)
+                        if scenario:
+                            self.samples.append(scenario)
     
     def _extract_track_name(self, filepath: str) -> str:
         """Extract track name from file path"""
