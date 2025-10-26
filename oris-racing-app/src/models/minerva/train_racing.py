@@ -98,8 +98,8 @@ class MinervaRacingAdapter(nn.Module):
         track_emb = self.track_embedding(torch.tensor([track_id]).to(next(self.parameters()).device))
         
         # Process through MINERVA's strategic transformer
-        # First create features from grid
-        features = torch.randn(1, 1, self.minerva.hidden_dim).to(grid.device)
+        # Create a dummy 4D tensor (batch, channels, height, width)
+        features = torch.randn(1, self.minerva.hidden_dim, 8, 8).to(grid.device)
         strategic_features = self.minerva.deep_strategic_transformer(features)
         
         # Combine with track-specific knowledge
