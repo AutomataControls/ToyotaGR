@@ -2,10 +2,16 @@
 import os
 import sys
 import torch
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from minerva.minerva import MinervaV6Enhanced
-from minerva.train_racing import MinervaRacingAdapter
+# Fix the path to ensure imports work
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, parent_dir)
+
+# Import directly
+import minerva.minerva
+import minerva.train_racing
+MinervaV6Enhanced = minerva.minerva.MinervaV6Enhanced
+MinervaRacingAdapter = minerva.train_racing.MinervaRacingAdapter
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"🧠 Training MINERVA on {device}...")

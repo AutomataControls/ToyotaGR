@@ -13,7 +13,7 @@ import os
 import json
 from torch.utils.data import Dataset, DataLoader
 from torch.cuda.amp import autocast, GradScaler
-from minerva import MinervaV6Enhanced
+from .minerva import MinervaV6Enhanced
 
 class MinervaRacingAdapter(nn.Module):
     """Adapts MINERVA's strategic pattern recognition for racing strategy"""
