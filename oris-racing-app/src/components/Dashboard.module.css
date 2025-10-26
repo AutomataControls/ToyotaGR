@@ -1,0 +1,61 @@
+.dashboard {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.trackMapFullWidth {
+  width: 100%;
+  padding: 1.5rem;
+  padding-bottom: 0;
+  height: 500px;
+  margin-bottom: 1rem;
+}
+
+.grid {
+  flex: 1;
+  overflow: auto;
+  padding: 1.5rem;
+  padding-top: 0.5rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, minmax(250px, 1fr));
+  gap: 1.5rem;
+  min-height: 400px;
+}
+
+.trackPositionSection,
+.lapComparisonSection,
+.strategySection,
+.telemetrySection,
+.predictionsSection,
+.specialistSection {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 1200px) {
+  .trackMapFullWidth {
+    min-height: 350px;
+    max-height: 450px;
+  }
+  
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(3, minmax(300px, auto));
+  }
+}
+
+@media (max-width: 768px) {
+  .trackMapFullWidth {
+    min-height: 300px;
+    max-height: 400px;
+    padding: 1rem;
+  }
+  
+  .grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(5, minmax(300px, auto));
+  }
+}

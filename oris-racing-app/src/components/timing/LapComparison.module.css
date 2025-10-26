@@ -1,0 +1,144 @@
+.timeDisplay {
+  margin-bottom: 1.5rem;
+}
+
+.mainTime {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-radius: 0.5rem;
+}
+
+.label {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 0.25rem;
+}
+
+.time {
+  font-size: 2rem;
+  font-weight: 700;
+  font-family: monospace;
+  color: #1f2937;
+}
+
+.comparison {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.comparisonRow {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+  background-color: #f9fafb;
+  border-radius: 0.375rem;
+}
+
+.compLabel {
+  flex: 1;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.compTime {
+  font-family: monospace;
+  font-size: 0.875rem;
+  color: #1f2937;
+  margin-right: 1rem;
+}
+
+.delta {
+  font-family: monospace;
+  font-size: 0.875rem;
+  font-weight: 600;
+  min-width: 4rem;
+  text-align: right;
+}
+
+.faster {
+  color: #10b981;
+}
+
+.slower {
+  color: #ef4444;
+}
+
+.neutral {
+  color: #6b7280;
+}
+
+.sectors {
+  margin-bottom: 1.5rem;
+}
+
+.sectorTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4b5563;
+  margin: 0 0 0.75rem 0;
+}
+
+.sectorGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.sector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem;
+  background-color: #f9fafb;
+  border-radius: 0.375rem;
+}
+
+.sectorLabel {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-bottom: 0.25rem;
+}
+
+.sectorTime {
+  font-family: monospace;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.sectorDelta {
+  font-family: monospace;
+  font-size: 0.75rem;
+  margin-top: 0.125rem;
+}
+
+.miniMap {
+  position: relative;
+}
+
+.progressBar {
+  height: 0.5rem;
+  background-color: #e5e7eb;
+  border-radius: 0.25rem;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress {
+  height: 100%;
+  background-color: #14b8a6;
+  transition: width 0.3s ease;
+}
+
+.sectorMarkers {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.625rem;
+  color: #9ca3af;
+  font-weight: 500;
+}

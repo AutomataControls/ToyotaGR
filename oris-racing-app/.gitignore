@@ -1,0 +1,55 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Models - these are too large for git
+*.pt
+*.pth
+*.pkl
+*.h5
+*.onnx
+*.pb
+src/models/**/*.pt
+src/models/**/*.pth
+src/models/**/*.pkl
+# Model weights - too large for git
+*.pt
+*.pth
+*.pkl
+*.h5
+*.onnx
+*.pb
+
+# Keep the training scripts excluded from the general exclusion
+racing_models/
+OLYMPUS_Racing_Models.zip
+
+# Track data (large CSV files)
+# Commenting out to include track data
+# src/data/tracks/**/*.csv
+# src/data/tracks/**/*.CSV
+
+# 3D Models (large files)
+public/track-models/*.glb
+public/track-models/*.gltf

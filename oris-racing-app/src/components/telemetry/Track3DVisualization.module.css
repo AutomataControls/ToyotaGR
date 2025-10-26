@@ -1,0 +1,54 @@
+.container {
+  position: relative;
+  height: 400px;
+  background-color: #f3f4f6;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(255, 255, 255, 0.95), transparent);
+  padding: 1rem;
+  pointer-events: none;
+}
+
+.legend {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  pointer-events: all;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.colorDot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.position {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.hint {
+  text-align: center;
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-style: italic;
+}

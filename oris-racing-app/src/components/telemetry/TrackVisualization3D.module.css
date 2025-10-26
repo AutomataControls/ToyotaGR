@@ -1,0 +1,128 @@
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.trackName {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.stats {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.lapInfo {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #14b8a6;
+}
+
+.sector {
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.sector.easy {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.sector.medium {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.sector.hard {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.canvas {
+  flex: 1;
+  min-height: 350px;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  position: relative;
+}
+
+.info {
+  padding: 1rem 1.5rem;
+  background: rgba(255, 255, 255, 0.8);
+  border-top: 1px solid #e5e7eb;
+}
+
+.progressBar {
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #14b8a6 0%, #0d9488 100%);
+  transition: width 0.3s ease;
+  position: relative;
+}
+
+.progressFill::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #fff;
+  box-shadow: 0 0 4px rgba(20, 184, 166, 0.6);
+}
+
+.trackInfo {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.trackInfo span {
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+  
+  .stats {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .canvas {
+    min-height: 300px;
+  }
+}

@@ -1,0 +1,136 @@
+.consensusHeader {
+  margin-bottom: 1.5rem;
+}
+
+.scoreContainer {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.scoreLabel {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.scoreValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #14b8a6;
+}
+
+.consensusBar {
+  height: 0.5rem;
+  background-color: #e5e7eb;
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+.consensusFill {
+  height: 100%;
+  background: linear-gradient(90deg, #14b8a6 0%, #0d9488 100%);
+  transition: width 0.3s ease;
+}
+
+.specialistList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.specialist {
+  padding: 0.75rem;
+  background-color: #f9fafb;
+  border-radius: 0.375rem;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+}
+
+.specialist:hover {
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.specialistHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.specialistInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.name {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #1f2937;
+  letter-spacing: 0.025em;
+}
+
+.confidence {
+  font-size: 0.625rem;
+  font-weight: 600;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+}
+
+.highConfidence {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.mediumConfidence {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.lowConfidence {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.specialistContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.role {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.recommendation {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #14b8a6;
+  font-family: monospace;
+}
+
+.footer {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1rem;
+}
+
+.primaryAction {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background-color: #f0fdfa;
+  border: 1px solid #5eead4;
+  border-radius: 0.375rem;
+}
+
+.actionText {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #0f766e;
+}

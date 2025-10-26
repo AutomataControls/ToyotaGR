@@ -1,0 +1,56 @@
+# Track data (too large for git)
+oris-racing-app/src/data/tracks/
+oris-racing-app/src/data/datasets/
+
+# Track models
+oris-racing-app/public/track-models/
+oris-racing-app/public/Vehicles/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv
+*.egg-info/
+dist/
+build/
+
+# Model files
+*.pt
+*.pth
+*.pkl
+*.h5
+*.onnx
+
+# Node modules
+node_modules/
+.npm
+.yarn
+
+# Build outputs
+build/
+dist/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.local
+.env.production.local
+
+# Temporary files
+*.tmp
+*.temp
