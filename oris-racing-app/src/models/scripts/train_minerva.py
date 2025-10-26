@@ -79,13 +79,24 @@ class TrainingConfig:
     use_mixup = True
     mixup_alpha = 0.2
     
-    # Telemetry channels to use
+    # Telemetry channels to use (mapped to actual column names)
     telemetry_channels = [
-        'speed', 'rpm', 'gear', 'throttle', 'brake',
-        'steer_angle', 'lat_g', 'long_g', 'oil_temp', 'water_temp',
-        'tire_temp_fl', 'tire_temp_fr', 'tire_temp_rl', 'tire_temp_rr',
-        'tire_pressure_fl', 'tire_pressure_fr', 'tire_pressure_rl', 'tire_pressure_rr'
+        'Speed', 'nmot', 'Gear', 'ath', 'pbrake_f', 'pbrake_r',
+        'Steering_Angle', 'accy_can', 'accx_can', 
+        'VBOX_Long_Minutes', 'VBOX_Lat_Min', 'Laptrigger_lapdist_dls'
     ]
+    
+    # Column mappings for compatibility
+    column_mappings = {
+        'speed': 'Speed',
+        'rpm': 'nmot',
+        'gear': 'Gear', 
+        'throttle': 'ath',
+        'brake': 'pbrake_f',
+        'steer_angle': 'Steering_Angle',
+        'lat_g': 'accy_can',
+        'long_g': 'accx_can'
+    }
     
     # Grid encoding settings
     grid_size = 30  # MINERVA's max grid size
@@ -239,13 +250,13 @@ class MinervaRacingDataset(Dataset):
         scenarios = []
         
         # Scenario 1: Pit window analysis
-        if lap_num % 15 == 0:  # Every 15 laps
+        if lap_num % 5 == 0 or lap_num == 1:  # Every 5 laps or first lap
             scenario = self._create_pit_scenario(lap_data, track_id, lap_num)
             if scenario:
                 scenarios.append(scenario)
         
         # Scenario 2: Overtaking opportunities
-        if 'speed' in lap_data.columns:
+        if 'Speed' in lap_data.columns or 'speed' in lap_data.columns:
             overtake_points = self._find_overtake_opportunities(lap_data)
             for point in overtake_points[:3]:  # Top 3 opportunities
                 scenario = self._create_overtake_scenario(lap_data, track_id, point)
@@ -258,7 +269,7 @@ class MinervaRacingDataset(Dataset):
             scenarios.append(tire_scenario)
         
         # Scenario 4: Fuel saving strategies
-        if lap_num > 10:  # After initial laps
+        if lap_num > 3:  # After initial laps
             fuel_scenario = self._create_fuel_scenario(lap_data, track_id, lap_num)
             if fuel_scenario:
                 scenarios.append(fuel_scenario)
@@ -589,10 +600,11 @@ class MinervaRacingDataset(Dataset):
     
     def _find_overtake_opportunities(self, lap_data: pd.DataFrame) -> List[int]:
         """Find potential overtaking points based on speed profiles"""
-        if 'speed' not in lap_data.columns or len(lap_data) < 10:
+        speed_col = 'Speed' if 'Speed' in lap_data.columns else 'speed'
+        if speed_col not in lap_data.columns or len(lap_data) < 10:
             return []
         
-        speed_data = lap_data['speed'].values
+        speed_data = lap_data[speed_col].values
         
         # Find braking zones (speed decreasing)
         braking_zones = []
@@ -605,13 +617,14 @@ class MinervaRacingDataset(Dataset):
     
     def _is_good_overtake_point(self, lap_data: pd.DataFrame, position: int) -> bool:
         """Determine if position is good for overtaking"""
-        if 'speed' not in lap_data.columns:
+        speed_col = 'Speed' if 'Speed' in lap_data.columns else 'speed'
+        if speed_col not in lap_data.columns:
             return False
         
         # Check if it's a braking zone or corner entry
         if position > 5 and position < len(lap_data) - 5:
-            speed_before = lap_data.iloc[position-5:position]['speed'].mean()
-            speed_at = lap_data.iloc[position]['speed']
+            speed_before = lap_data.iloc[position-5:position][speed_col].mean()
+            speed_at = lap_data.iloc[position][speed_col]
             return speed_at < speed_before * 0.85
         
         return False
