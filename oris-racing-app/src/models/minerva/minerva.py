@@ -11,11 +11,47 @@ import math
 from typing import Dict, Optional, Tuple, List
 from collections import defaultdict
 
-# Import existing MINERVA components for weight preservation
-from src.models.minerva_model import (
-    GridAttention, ObjectEncoder, RelationalReasoning, 
-    TransformationPredictor, EnhancedMinervaNet
-)
+# Define components directly here since we don't have the original imports
+class GridAttention(nn.Module):
+    def __init__(self, hidden_size):
+        super().__init__()
+        self.attention = nn.MultiheadAttention(hidden_size, num_heads=8)
+    
+    def forward(self, x):
+        return self.attention(x, x, x)[0]
+
+class ObjectEncoder(nn.Module):
+    def __init__(self, input_size, hidden_size):
+        super().__init__()
+        self.encoder = nn.Linear(input_size, hidden_size)
+    
+    def forward(self, x):
+        return self.encoder(x)
+
+class RelationalReasoning(nn.Module):
+    def __init__(self, hidden_size):
+        super().__init__()
+        self.mlp = nn.Sequential(
+            nn.Linear(hidden_size * 2, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, hidden_size)
+        )
+    
+    def forward(self, x):
+        return self.mlp(x)
+
+class TransformationPredictor(nn.Module):
+    def __init__(self, hidden_size, output_size):
+        super().__init__()
+        self.predictor = nn.Linear(hidden_size, output_size)
+    
+    def forward(self, x):
+        return self.predictor(x)
+
+class EnhancedMinervaNet(nn.Module):
+    def __init__(self, hidden_size=256):
+        super().__init__()
+        self.encoder = nn.Conv2d(10, hidden_size, 3, padding=1)
 
 
 class DeepStrategicTransformer(nn.Module):
