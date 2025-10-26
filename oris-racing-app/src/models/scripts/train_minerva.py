@@ -48,12 +48,12 @@ class TrainingConfig:
     data_root = "/content/ToyotaGR/src/data/tracks/tracks"
     tracks = ["Sonoma", "COTA", "Sebring", "Road America", "VIR", "barber"]
     
-    # Training stages (progressive curriculum)
+    # Training stages (progressive curriculum) - increased learning rates
     stages = [
-        {"name": "foundation", "epochs": 5, "lr": 1e-4, "focus": "basic_patterns"},
-        {"name": "strategic", "epochs": 5, "lr": 5e-5, "focus": "strategic_planning"},
-        {"name": "advanced", "epochs": 10, "lr": 2e-5, "focus": "complex_scenarios"},
-        {"name": "mastery", "epochs": 5, "lr": 1e-5, "focus": "fine_tuning"}
+        {"name": "foundation", "epochs": 5, "lr": 5e-4, "focus": "basic_patterns"},
+        {"name": "strategic", "epochs": 5, "lr": 3e-4, "focus": "strategic_planning"},
+        {"name": "advanced", "epochs": 10, "lr": 1e-4, "focus": "complex_scenarios"},
+        {"name": "mastery", "epochs": 5, "lr": 5e-5, "focus": "fine_tuning"}
     ]
     
     # A100 optimized settings
@@ -245,7 +245,36 @@ class MinervaRacingDataset(Dataset):
                 # Fill missing values
                 wide_df = wide_df.ffill().fillna(0)
                 
-                print(f"    Converted from long to wide format: {len(wide_df)} rows, columns: {list(wide_df.columns)[:5]}...")
+                # Generate Speed column if missing (estimate from acceleration data)
+                if 'Speed' not in wide_df.columns and 'accx_can' in wide_df.columns:
+                    # Estimate speed from longitudinal acceleration
+                    # Integrate acceleration over time to get velocity
+                    if 'timestamp' in wide_df.columns:
+                        time_diff = wide_df['timestamp'].diff().fillna(0.01)  # Assume 10ms intervals
+                        wide_df['Speed'] = (wide_df['accx_can'] * 9.81 * time_diff).cumsum() * 3.6  # m/s to km/h
+                        wide_df['Speed'] = wide_df['Speed'].clip(0, 300)  # Realistic speed range
+                    else:
+                        # Fallback: use acceleration magnitude as proxy
+                        wide_df['Speed'] = (wide_df['accx_can'].abs() * 100).clip(0, 300)
+                
+                # Add other missing critical columns with synthetic data
+                if 'nmot' not in wide_df.columns:
+                    # Estimate RPM from speed if available
+                    if 'Speed' in wide_df.columns:
+                        wide_df['nmot'] = wide_df['Speed'] * 50 + np.random.normal(2000, 500, len(wide_df))
+                        wide_df['nmot'] = wide_df['nmot'].clip(1000, 12000)
+                
+                if 'ath' not in wide_df.columns:
+                    # Estimate throttle from acceleration
+                    if 'accx_can' in wide_df.columns:
+                        wide_df['ath'] = (wide_df['accx_can'].clip(0, 2) * 50).clip(0, 100)
+                
+                if 'pbrake_f' not in wide_df.columns:
+                    # Estimate brake from negative acceleration
+                    if 'accx_can' in wide_df.columns:
+                        wide_df['pbrake_f'] = (-wide_df['accx_can'].clip(-3, 0) * 33).clip(0, 100)
+                
+                print(f"    Converted from long to wide format: {len(wide_df)} rows, columns: {list(wide_df.columns)[:8]}...")
                 return wide_df
             except Exception as e:
                 print(f"    Could not convert to wide format: {e}")
@@ -325,8 +354,8 @@ class MinervaRacingDataset(Dataset):
         """Generate strategic racing scenarios from lap data"""
         scenarios = []
         
-        # Scenario 1: Pit window analysis
-        if lap_num % 5 == 0 or lap_num == 1:  # Every 5 laps or first lap
+        # Scenario 1: Pit window analysis (more frequent)
+        if lap_num % 3 == 0 or lap_num == 1:  # Every 3 laps or first lap
             scenario = self._create_pit_scenario(lap_data, track_id, lap_num)
             if scenario:
                 scenarios.append(scenario)
