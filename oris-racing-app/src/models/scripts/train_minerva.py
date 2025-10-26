@@ -370,7 +370,16 @@ class MinervaRacingDataset(Dataset):
                 if scenario:
                     scenarios.append(scenario)
         
-        # Scenario 3: Tire degradation patterns
+        # Scenario 3: Tire degradation patterns - create multiple samples
+        # Create tire scenarios at different points in the lap for better coverage
+        tire_sample_points = [0, len(lap_data)//4, len(lap_data)//2, 3*len(lap_data)//4]
+        for sample_point in tire_sample_points:
+            if sample_point < len(lap_data) - self.config.sequence_length:
+                tire_scenario = self._create_tire_scenario_at_position(lap_data, track_id, lap_num, sample_point)
+                if tire_scenario:
+                    scenarios.append(tire_scenario)
+        
+        # Also create standard tire scenario
         tire_scenario = self._create_tire_scenario(lap_data, track_id, lap_num)
         if tire_scenario:
             scenarios.append(tire_scenario)
@@ -478,6 +487,54 @@ class MinervaRacingDataset(Dataset):
                 },
                 'metadata': {
                     'lap': lap_num,
+                    'tire_temps': tire_temps,
+                    'tire_deg': tire_deg
+                }
+            }
+        except Exception:
+            return None
+    
+    def _create_tire_scenario_at_position(self, lap_data: pd.DataFrame, track_id: int, lap_num: int, position: int) -> Optional[Dict]:
+        """Create tire management scenario at specific position in lap"""
+        try:
+            window_size = min(self.config.sequence_length, len(lap_data) - position)
+            telemetry = self._extract_telemetry_window(lap_data, position, window_size)
+            
+            # Calculate detailed tire metrics
+            tire_temps = self._extract_tire_temperatures(lap_data)
+            tire_deg = self._calculate_tire_degradation(lap_data, lap_num)
+            
+            # Adjust tire degradation based on position in lap
+            position_factor = position / len(lap_data)
+            tire_deg['avg'] = tire_deg['avg'] * (1 + 0.2 * position_factor)  # Tires degrade more later in lap
+            
+            # Encode with tire focus
+            grid = self._encode_tire_grid(telemetry, tire_temps, tire_deg, track_id)
+            
+            # Tire management decisions with more variety
+            # Different strategies based on lap position
+            if position_factor < 0.3:  # Early in lap
+                push_level = 0 if tire_deg['avg'] > 0.6 else 1
+            elif position_factor < 0.7:  # Mid lap
+                push_level = 1 if tire_deg['avg'] > 0.5 else 2
+            else:  # Late in lap
+                push_level = 2 if tire_deg['avg'] > 0.7 else 1
+            
+            # More nuanced tire saving decision
+            tire_saving = 1 if (tire_deg['avg'] < 0.5 or position_factor > 0.8) else 0
+            
+            return {
+                'grid': grid,
+                'track_id': track_id,
+                'scenario_type': 'tire_management',
+                'labels': {
+                    'push_level': push_level,
+                    'tire_saving': tire_saving,
+                    'rotation_needed': 1 if tire_deg['variance'] > 0.15 else 0
+                },
+                'metadata': {
+                    'lap': lap_num,
+                    'position': position,
                     'tire_temps': tire_temps,
                     'tire_deg': tire_deg
                 }
@@ -680,14 +737,29 @@ class MinervaRacingDataset(Dataset):
         """Calculate tire degradation based on lap number and telemetry"""
         base_deg = min(1.0, lap_num * 0.02)  # 2% per lap base degradation
         
-        # Add variance based on driving style
-        variance = np.random.uniform(0.0, 0.1)
+        # Analyze driving style from telemetry to affect degradation
+        degradation_multiplier = 1.0
         
+        if 'lat_g' in lap_data.columns or 'accy_can' in lap_data.columns:
+            lat_col = 'lat_g' if 'lat_g' in lap_data.columns else 'accy_can'
+            avg_lateral_g = lap_data[lat_col].abs().mean()
+            # Higher lateral G means more tire wear
+            degradation_multiplier += avg_lateral_g * 0.1
+        
+        if 'brake' in lap_data.columns or 'pbrake_f' in lap_data.columns:
+            brake_col = 'brake' if 'brake' in lap_data.columns else 'pbrake_f'
+            brake_intensity = lap_data[brake_col].mean()
+            # Heavy braking wears front tires more
+            front_multiplier = 1 + brake_intensity / 200
+        else:
+            front_multiplier = 1.0
+            
+        # Calculate per-tire degradation with realistic patterns
         deg = {
-            'fl': min(1.0, base_deg + np.random.uniform(-variance, variance)),
-            'fr': min(1.0, base_deg + np.random.uniform(-variance, variance)),
-            'rl': min(1.0, base_deg + np.random.uniform(-variance, variance)),
-            'rr': min(1.0, base_deg + np.random.uniform(-variance, variance))
+            'fl': min(1.0, base_deg * degradation_multiplier * front_multiplier * 1.1),
+            'fr': min(1.0, base_deg * degradation_multiplier * front_multiplier * 1.05),
+            'rl': min(1.0, base_deg * degradation_multiplier * 0.9),
+            'rr': min(1.0, base_deg * degradation_multiplier * 0.95)
         }
         
         deg['avg'] = np.mean(list(deg.values()))
@@ -1109,9 +1181,12 @@ class MinervaTrainer:
         additional_heads = ['overtake_decision_head', 'risk_level_head', 'push_level_head', 'fuel_mode_head']
         for head_name in additional_heads:
             if hasattr(self.model, head_name):
+                # Add extra weight decay for tire-related heads to prevent overfitting
+                weight_decay = self.config.weight_decay * 2 if 'push_level' in head_name else self.config.weight_decay
                 param_groups.append({
                     'params': getattr(self.model, head_name).parameters(),
                     'lr': self.config.stages[0]['lr'],
+                    'weight_decay': weight_decay,
                     'name': head_name.replace('_head', '')
                 })
         
