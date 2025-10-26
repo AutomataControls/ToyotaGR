@@ -110,7 +110,7 @@ class DeepStrategicTransformer(nn.Module):
         
         # Add 2D positional encoding
         pos_enc = self.pos_encoding_2d[:H, :W, :C].reshape(H*W, C)
-        x_with_pos = x_seq + pos_enc.unsqueeze(0)
+        x_with_pos = x_seq + pos_enc.unsqueeze(0).to(x_seq.device)
         
         # Deep strategic processing
         strategic_analyses = []
