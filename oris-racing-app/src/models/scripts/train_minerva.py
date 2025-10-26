@@ -936,6 +936,7 @@ class MinervaTrainer:
         self.global_step = 0
         self.best_performance = 0.0
         self.stage_performances = {}
+        self.start_epoch = 0
         
     def _initialize_model(self):
         """Initialize MINERVA model and racing adapter"""
@@ -968,6 +969,17 @@ class MinervaTrainer:
         trainable_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
         print(f"Total parameters: {total_params:,}")
         print(f"Trainable parameters: {trainable_params:,}")
+        
+        # Load best checkpoint if available
+        best_checkpoint_path = os.path.join(self.config.checkpoint_dir, "minerva_best.pt")
+        if os.path.exists(best_checkpoint_path):
+            try:
+                checkpoint = torch.load(best_checkpoint_path, map_location=self.device)
+                self.model.load_state_dict(checkpoint['model_state_dict'])
+                self.best_performance = checkpoint.get('best_accuracy', 0.0)
+                print(f"\033[92mLoaded best checkpoint with {self.best_performance:.2f}% accuracy\033[0m")
+            except Exception as e:
+                print(f"Warning: Could not load best checkpoint: {e}")
         
         # Initialize EMA model for stability
         self.ema_model = self._create_ema_model()
@@ -1116,6 +1128,23 @@ class MinervaTrainer:
         print(f"Optimizer: AdamW with {len(param_groups)} parameter groups")
         print(f"Scheduler: CosineAnnealingWarmRestarts")
         print(f"Mixed Precision: {'Enabled' if self.config.use_amp else 'Disabled'}")
+        
+        # Load optimizer state if resuming
+        best_checkpoint_path = os.path.join(self.config.checkpoint_dir, "minerva_best.pt")
+        if os.path.exists(best_checkpoint_path):
+            try:
+                checkpoint = torch.load(best_checkpoint_path, map_location=self.device)
+                if 'optimizer_state_dict' in checkpoint:
+                    self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+                    print(f"Loaded optimizer state from checkpoint")
+                if 'scheduler_state_dict' in checkpoint:
+                    self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+                    print(f"Loaded scheduler state from checkpoint")
+                if 'epoch' in checkpoint:
+                    self.start_epoch = checkpoint['epoch']
+                    print(f"Resuming from epoch {self.start_epoch}")
+            except Exception as e:
+                print(f"Warning: Could not load optimizer/scheduler state: {e}")
     
     def train(self):
         """Execute multi-stage progressive training"""
@@ -1526,6 +1555,8 @@ class MinervaTrainer:
             'scheduler_state_dict': self.scheduler.state_dict(),
             'global_step': self.global_step,
             'performance': performance,
+            'best_accuracy': self.best_performance,
+            'epoch': self.global_step // len(self.train_loader),
             'config': self.config.__dict__
         }
         
