@@ -95,7 +95,7 @@ class MinervaRacingAdapter(nn.Module):
         
         # Get track embedding
         track_id = race_data['track_id']
-        track_emb = self.track_embedding(torch.tensor([track_id]))
+        track_emb = self.track_embedding(torch.tensor([track_id]).to(next(self.parameters()).device))
         
         # Process through MINERVA's strategic transformer
         strategic_features = self.minerva.deep_strategic_transformer(

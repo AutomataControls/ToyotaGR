@@ -29,7 +29,8 @@ for epoch in range(5):
         'tire_degradation': {'fl': 0.7, 'fr': 0.72, 'rl': 0.68, 'rr': 0.69},
         'fuel_percentage': 0.6,
         'track_id': 0,
-        'competitors': [{'position': 0.35}, {'position': 0.25}]
+        'competitors': [{'position': 0.35}, {'position': 0.25}],
+        'device': device  # Pass device to adapter
     }
     
     predictions = minerva_racing(data)
