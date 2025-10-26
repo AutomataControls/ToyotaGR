@@ -50,15 +50,15 @@ class TrainingConfig:
     
     # Training stages (progressive curriculum)
     stages = [
-        {"name": "foundation", "epochs": 50, "lr": 1e-4, "focus": "basic_patterns"},
-        {"name": "strategic", "epochs": 75, "lr": 5e-5, "focus": "strategic_planning"},
-        {"name": "advanced", "epochs": 100, "lr": 2e-5, "focus": "complex_scenarios"},
-        {"name": "mastery", "epochs": 50, "lr": 1e-5, "focus": "fine_tuning"}
+        {"name": "foundation", "epochs": 5, "lr": 1e-4, "focus": "basic_patterns"},
+        {"name": "strategic", "epochs": 5, "lr": 5e-5, "focus": "strategic_planning"},
+        {"name": "advanced", "epochs": 10, "lr": 2e-5, "focus": "complex_scenarios"},
+        {"name": "mastery", "epochs": 5, "lr": 1e-5, "focus": "fine_tuning"}
     ]
     
     # A100 optimized settings
-    batch_size = 512  # Optimized for A100 80GB
-    gradient_accumulation = 2  # Effective batch size: 1024
+    batch_size = 16  # Start small for testing
+    gradient_accumulation = 1  # Keep simple for now
     num_workers = 8
     pin_memory = True
     persistent_workers = True
@@ -96,8 +96,8 @@ class TrainingConfig:
     save_every = 10
     
     # Logging
-    log_interval = 50
-    val_interval = 100
+    log_interval = 1
+    val_interval = 2
 
 
 # =====================================
@@ -207,6 +207,14 @@ class MinervaRacingDataset(Dataset):
                         # Create multiple samples per lap for different strategic scenarios
                         for scenario in self._generate_scenarios(lap_data, track_id, lap):
                             self.samples.append(scenario)
+            else:
+                # If no lap column, create samples from chunks of data
+                chunk_size = self.config.sequence_length * 2
+                for i in range(0, len(df) - chunk_size, chunk_size // 2):
+                    chunk = df.iloc[i:i+chunk_size]
+                    lap_num = i // chunk_size + 1
+                    for scenario in self._generate_scenarios(chunk, track_id, lap_num):
+                        self.samples.append(scenario)
     
     def _extract_track_name(self, filepath: str) -> str:
         """Extract track name from file path"""
@@ -832,14 +840,19 @@ class MinervaTrainer:
         )
         
         # Create data loaders
+        # Adjust batch size if we have fewer samples
+        train_batch_size = min(self.config.batch_size, len(self.train_dataset))
+        if train_batch_size < self.config.batch_size:
+            print(f"Adjusting batch size from {self.config.batch_size} to {train_batch_size} due to limited samples")
+        
         self.train_loader = DataLoader(
             self.train_dataset,
-            batch_size=self.config.batch_size,
+            batch_size=train_batch_size,
             shuffle=True,
-            num_workers=self.config.num_workers,
+            num_workers=self.config.num_workers if len(self.train_dataset) > 100 else 0,
             pin_memory=self.config.pin_memory,
-            persistent_workers=self.config.persistent_workers,
-            drop_last=True
+            persistent_workers=self.config.persistent_workers if len(self.train_dataset) > 100 else False,
+            drop_last=False  # Don't drop last with small datasets
         )
         
         self.val_loader = DataLoader(
@@ -891,10 +904,13 @@ class MinervaTrainer:
         )
         
         # Learning rate scheduler with warm restarts
-        total_steps = sum(stage['epochs'] for stage in self.config.stages) * len(self.train_loader)
+        steps_per_epoch = max(1, len(self.train_loader))  # At least 1
+        total_steps = sum(stage['epochs'] for stage in self.config.stages) * steps_per_epoch
+        T_0 = max(1, steps_per_epoch * self.config.warmup_epochs)  # At least 1
+        
         self.scheduler = CosineAnnealingWarmRestarts(
             self.optimizer,
-            T_0=len(self.train_loader) * self.config.warmup_epochs,
+            T_0=T_0,
             T_mult=2,
             eta_min=1e-7
         )
