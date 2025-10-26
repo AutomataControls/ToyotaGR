@@ -62,7 +62,8 @@ class MinervaRacingAdapter(nn.Module):
         - Weather/track conditions (rows 20-24)
         - Competitor positions (rows 25-29)
         """
-        grid = torch.zeros(30, 30)
+        device = next(self.parameters()).device
+        grid = torch.zeros(30, 30, device=device)
         
         # Track position representation (normalize to 0-30)
         position_normalized = int(race_data['track_position'] * 30)
@@ -90,20 +91,22 @@ class MinervaRacingAdapter(nn.Module):
     
     def forward(self, race_data: Dict) -> Dict[str, torch.Tensor]:
         # Convert race state to grid
-        grid = self.encode_race_state_as_grid(race_data)
+        device = next(self.parameters()).device
+        grid = self.encode_race_state_as_grid(race_data).to(device)
         grid = grid.unsqueeze(0).unsqueeze(0)  # Add batch and channel dims
         
         # Get track embedding
         track_id = race_data['track_id']
-        track_emb = self.track_embedding(torch.tensor([track_id]).to(next(self.parameters()).device))
+        track_emb = self.track_embedding(torch.tensor([track_id], device=device))
         
         # Process through MINERVA's strategic transformer
         # Create a dummy 4D tensor (batch, channels, height, width)
-        features = torch.randn(1, self.minerva.hidden_dim, 8, 8).to(grid.device)
-        strategic_features = self.minerva.deep_strategic_transformer(features)
+        device = next(self.parameters()).device
+        features = torch.randn(1, self.minerva.hidden_dim, 8, 8, device=device)
+        strategic_features, _ = self.minerva.deep_strategic_transformer(features)
         
         # Combine with track-specific knowledge
-        features = strategic_features.mean(dim=[1, 2]) + track_emb
+        features = strategic_features.mean(dim=[2, 3]) + track_emb
         
         # Generate racing predictions
         predictions = {
