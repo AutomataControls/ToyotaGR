@@ -54,6 +54,20 @@ class EnhancedMinervaNet(nn.Module):
         self.max_grid_size = max_grid_size
         self.hidden_size = hidden_size
         self.encoder = nn.Conv2d(10, hidden_size, 3, padding=1)
+        self.decoder = nn.Conv2d(hidden_size, 10, 1)
+    
+    def forward(self, input_grid: torch.Tensor, output_grid: Optional[torch.Tensor] = None,
+                mode: str = 'inference') -> Dict[str, torch.Tensor]:
+        # Basic forward pass for compatibility
+        features = self.encoder(input_grid)
+        predicted_output = self.decoder(features)
+        
+        return {
+            'features': features,
+            'predicted_output': predicted_output,
+            'transform_params': None,
+            'object_masks': None
+        }
 
 
 class DeepStrategicTransformer(nn.Module):
