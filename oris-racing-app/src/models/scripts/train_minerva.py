@@ -57,11 +57,11 @@ class TrainingConfig:
     ]
     
     # A100 optimized settings
-    batch_size = 16  # Start small for testing
+    batch_size = 2  # Very small for tiny dataset
     gradient_accumulation = 1  # Keep simple for now
-    num_workers = 8
+    num_workers = 2  # Reduced for small dataset
     pin_memory = True
-    persistent_workers = True
+    persistent_workers = False  # Disable for small dataset
     
     # Mixed precision settings
     use_amp = True
@@ -97,7 +97,7 @@ class TrainingConfig:
     
     # Logging
     log_interval = 1
-    val_interval = 2
+    val_interval = 5  # Less frequent validation for small dataset
 
 
 # =====================================
@@ -120,6 +120,17 @@ class MinervaRacingDataset(Dataset):
         
         # Create training samples with strategic patterns
         self._create_strategic_samples()
+        
+        # Split data for train/val
+        if len(self.samples) > 0:
+            if stage == "train":
+                # Take 80% for training
+                split_idx = int(len(self.samples) * 0.8)
+                self.samples = self.samples[:split_idx]
+            elif stage == "val":
+                # Take 20% for validation
+                split_idx = int(len(self.samples) * 0.8)
+                self.samples = self.samples[split_idx:]
         
         print(f"Created {len(self.samples)} samples for {stage}")
     
@@ -855,14 +866,17 @@ class MinervaTrainer:
             drop_last=False  # Don't drop last with small datasets
         )
         
+        # Handle small validation set
+        val_batch_size = min(self.config.batch_size * 2, max(1, len(self.val_dataset)))
+        
         self.val_loader = DataLoader(
             self.val_dataset,
-            batch_size=self.config.batch_size * 2,  # Larger batch for validation
+            batch_size=val_batch_size,  # Adaptive batch size
             shuffle=False,
-            num_workers=self.config.num_workers // 2,
-            pin_memory=self.config.pin_memory,
-            persistent_workers=self.config.persistent_workers
-        )
+            num_workers=0 if len(self.val_dataset) < 10 else self.config.num_workers // 2,
+            pin_memory=self.config.pin_memory if len(self.val_dataset) > 10 else False,
+            persistent_workers=False  # Disable for small datasets
+        ) if len(self.val_dataset) > 0 else None
         
         print(f"Train samples: {len(self.train_dataset):,}")
         print(f"Val samples: {len(self.val_dataset):,}")
@@ -1015,8 +1029,8 @@ class MinervaTrainer:
             # Training epoch
             train_metrics = self._train_epoch(epoch, stage['epochs'], stage_idx)
             
-            # Validation
-            if (epoch + 1) % self.config.val_interval == 0:
+            # Validation (always validate with small datasets)
+            if (epoch + 1) % self.config.val_interval == 0 or len(self.train_dataset) < 100:
                 val_metrics = self._validate()
                 
                 # Track best performance
@@ -1159,19 +1173,24 @@ class MinervaTrainer:
     def _grid_to_race_data(self, grid: torch.Tensor, track_id: int, scenario_type: str) -> Dict:
         """Convert grid back to race data format for model input"""
         # Extract information from grid encoding
+        # Handle NaN values
+        def safe_float(value):
+            result = float(value)
+            return result if not (np.isnan(result) or np.isinf(result)) else 0.5
+            
         race_data = {
-            'track_position': float(grid[:10].mean().item()),  # Simplified
-            'speed': float(grid[:10].max().item() * 300),  # Denormalize
+            'track_position': safe_float(grid[:10].mean().item()),  # Simplified
+            'speed': safe_float(grid[:10].max().item() * 300),  # Denormalize
             'tire_degradation': {
-                'FL': float(grid[10].sum().item() / 30),
-                'FR': float(grid[11].sum().item() / 30),
-                'RL': float(grid[12].sum().item() / 30),
-                'RR': float(grid[13].sum().item() / 30)
+                'FL': safe_float(grid[10].sum().item() / 30),
+                'FR': safe_float(grid[11].sum().item() / 30),
+                'RL': safe_float(grid[12].sum().item() / 30),
+                'RR': safe_float(grid[13].sum().item() / 30)
             },
-            'fuel_percentage': float(grid[15:20].mean().item()),
+            'fuel_percentage': safe_float(grid[15:20].mean().item()),
             'track_id': track_id,
             'competitors': [
-                {'position': float(grid[20 + i].argmax().item() / 30)}
+                {'position': safe_float(grid[20 + i].argmax().item() / 30)}
                 for i in range(5) if grid[20 + i].sum() > 0
             ]
         }
@@ -1227,6 +1246,11 @@ class MinervaTrainer:
     def _validate(self) -> Dict[str, float]:
         """Validate model performance"""
         self.model.eval()
+        
+        # Skip validation if no validation data
+        if self.val_loader is None or len(self.val_dataset) == 0:
+            print("No validation data available - skipping validation")
+            return {'accuracy': 0.0, 'loss': 0.0}
         
         total_correct = 0
         total_samples = 0
