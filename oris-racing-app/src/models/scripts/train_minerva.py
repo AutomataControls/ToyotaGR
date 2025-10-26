@@ -48,12 +48,12 @@ class TrainingConfig:
     data_root = "/content/ToyotaGR/src/data/tracks/tracks"
     tracks = ["Sonoma", "COTA", "Sebring", "Road America", "VIR", "barber"]
     
-    # Training stages (progressive curriculum) - increased learning rates
+    # Training stages (progressive curriculum) - reduced learning rates to prevent NaN
     stages = [
-        {"name": "foundation", "epochs": 5, "lr": 5e-4, "focus": "basic_patterns"},
-        {"name": "strategic", "epochs": 5, "lr": 3e-4, "focus": "strategic_planning"},
-        {"name": "advanced", "epochs": 10, "lr": 1e-4, "focus": "complex_scenarios"},
-        {"name": "mastery", "epochs": 5, "lr": 5e-5, "focus": "fine_tuning"}
+        {"name": "foundation", "epochs": 5, "lr": 1e-4, "focus": "basic_patterns"},
+        {"name": "strategic", "epochs": 5, "lr": 5e-5, "focus": "strategic_planning"},
+        {"name": "advanced", "epochs": 10, "lr": 1e-5, "focus": "complex_scenarios"},
+        {"name": "mastery", "epochs": 5, "lr": 5e-6, "focus": "fine_tuning"}
     ]
     
     # A100 optimized settings
@@ -70,7 +70,7 @@ class TrainingConfig:
     # Optimization settings
     warmup_epochs = 5
     weight_decay = 1e-5
-    gradient_clip = 1.0
+    gradient_clip = 0.5  # Reduced to prevent gradient explosion
     ema_decay = 0.995
     
     # Advanced features
