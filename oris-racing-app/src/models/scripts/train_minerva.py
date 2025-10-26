@@ -1408,25 +1408,32 @@ class MinervaTrainer:
             target = labels['fuel_save'][idx:idx+1].float()
             loss += self.criterion_fuel(predictions['fuel_save'].squeeze(), target.squeeze())
         
-        # Scenario-specific losses
-        if scenario_type == 'overtake' and 'overtake_decision' in labels:
-            # Add overtaking-specific losses
-            if 'risk_level' in labels:
+        # Scenario-specific losses - use the CORRECT prediction heads
+        if scenario_type == 'overtake':
+            if 'overtake_decision' in labels and 'overtake_decision' in predictions:
+                target = labels['overtake_decision'][idx:idx+1]
+                loss += self.criterion_overtake(predictions['overtake_decision'], target)
+            if 'risk_level' in labels and 'risk_level' in predictions:
                 target = labels['risk_level'][idx:idx+1]
-                # Use tire_choice head as proxy for risk assessment
-                loss += 0.5 * self.criterion_risk(predictions['tire_choice'], target)
+                loss += 0.5 * self.criterion_risk(predictions['risk_level'], target)
         
-        elif scenario_type == 'tire_management' and 'push_level' in labels:
-            # Add tire management losses
-            target = labels['push_level'][idx:idx+1]
-            # Use pit_strategy head as proxy for push level
-            loss += 0.5 * self.criterion_overtake(predictions['pit_strategy'], target)
+        elif scenario_type == 'tire_management':
+            if 'push_level' in labels and 'push_level' in predictions:
+                target = labels['push_level'][idx:idx+1]
+                loss += self.criterion_overtake(predictions['push_level'], target)
+            # Use any binary labels with overtake head
+            if 'tire_saving' in labels and 'overtake_decision' in predictions:
+                target = labels['tire_saving'][idx:idx+1]
+                loss += 0.5 * self.criterion_overtake(predictions['overtake_decision'], target)
         
-        elif scenario_type == 'fuel_management' and 'fuel_mode' in labels:
-            # Add fuel management losses
-            target = labels['fuel_mode'][idx:idx+1]
-            # Use tire_choice head as proxy for fuel mode
-            loss += 0.5 * self.criterion_tire(predictions['tire_choice'], target)
+        elif scenario_type == 'fuel_management':
+            if 'fuel_mode' in labels and 'fuel_mode' in predictions:
+                target = labels['fuel_mode'][idx:idx+1]
+                loss += self.criterion_tire(predictions['fuel_mode'], target)
+            # Use any binary labels with overtake head
+            if 'lift_and_coast' in labels and 'overtake_decision' in predictions:
+                target = labels['lift_and_coast'][idx:idx+1]
+                loss += 0.5 * self.criterion_overtake(predictions['overtake_decision'], target)
         
         return loss
     
@@ -1460,24 +1467,35 @@ class MinervaTrainer:
                     # Forward pass
                     predictions = self.model(race_data)
                     
-                    # Compute accuracy based on scenario type
+                    # Compute accuracy based on scenario type using CORRECT heads
                     correct = False
                     if scenario_types[i] == 'pit_strategy' and 'pit_decision' in labels:
                         pred = predictions['pit_strategy'].argmax(dim=-1)
                         target = labels['pit_decision'][i:i+1]
                         correct = (pred == target).item()
-                    elif scenario_types[i] == 'tire_management' and 'push_level' in labels:
-                        pred = predictions['pit_strategy'].argmax(dim=-1)  # Using as proxy
-                        target = labels['push_level'][i:i+1]
-                        correct = (pred == target).item()
-                    elif scenario_types[i] == 'overtake' and 'overtake_decision' in labels:
-                        pred = (predictions['pit_strategy'][0, 0] > 0).long()  # Binary decision
-                        target = labels['overtake_decision'][i:i+1]
-                        correct = (pred == target).item()
-                    elif scenario_types[i] == 'fuel_management' and 'fuel_mode' in labels:
-                        pred = predictions['tire_choice'].argmax(dim=-1)  # Using as proxy
-                        target = labels['fuel_mode'][i:i+1]
-                        correct = (pred == target).item()
+                    elif scenario_types[i] == 'tire_management':
+                        if 'push_level' in labels and 'push_level' in predictions:
+                            pred = predictions['push_level'].argmax(dim=-1)
+                            target = labels['push_level'][i:i+1]
+                            correct = (pred == target).item()
+                        elif 'tire_saving' in labels and 'overtake_decision' in predictions:
+                            pred = predictions['overtake_decision'].argmax(dim=-1)
+                            target = labels['tire_saving'][i:i+1]
+                            correct = (pred == target).item()
+                    elif scenario_types[i] == 'overtake':
+                        if 'overtake_decision' in labels and 'overtake_decision' in predictions:
+                            pred = predictions['overtake_decision'].argmax(dim=-1)
+                            target = labels['overtake_decision'][i:i+1]
+                            correct = (pred == target).item()
+                    elif scenario_types[i] == 'fuel_management':
+                        if 'fuel_mode' in labels and 'fuel_mode' in predictions:
+                            pred = predictions['fuel_mode'].argmax(dim=-1)
+                            target = labels['fuel_mode'][i:i+1]
+                            correct = (pred == target).item()
+                        elif 'lift_and_coast' in labels and 'overtake_decision' in predictions:
+                            pred = predictions['overtake_decision'].argmax(dim=-1)
+                            target = labels['lift_and_coast'][i:i+1]
+                            correct = (pred == target).item()
                     
                     if correct:
                         total_correct += 1
