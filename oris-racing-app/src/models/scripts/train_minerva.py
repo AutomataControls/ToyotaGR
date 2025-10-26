@@ -217,16 +217,30 @@ class MinervaRacingDataset(Dataset):
                 column_map = {
                     'vehicle_speed': 'Speed',
                     'speed': 'Speed',
+                    'Speed': 'Speed',  # Already correct
                     'engine_rpm': 'nmot',
                     'rpm': 'nmot',
+                    'nmot': 'nmot',  # Already correct
                     'throttle_position': 'ath',
+                    'ath': 'ath',  # Already correct
                     'brake_pressure': 'pbrake_f',
+                    'pbrake_f': 'pbrake_f',  # Already correct
                     'steering_angle': 'Steering_Angle',
+                    'Steering_Angle': 'Steering_Angle',  # Already correct
                     'lateral_g': 'accy_can',
-                    'longitudinal_g': 'accx_can'
+                    'longitudinal_g': 'accx_can',
+                    'accx_can': 'accx_can',  # Already correct
+                    'accy_can': 'accy_can'  # Already correct
                 }
                 
-                wide_df = wide_df.rename(columns=column_map)
+                # Only rename columns that exist
+                rename_dict = {}
+                for col in wide_df.columns:
+                    if col in column_map and column_map[col] != col:
+                        rename_dict[col] = column_map[col]
+                
+                if rename_dict:
+                    wide_df = wide_df.rename(columns=rename_dict)
                 
                 # Fill missing values
                 wide_df = wide_df.ffill().fillna(0)
@@ -815,6 +829,50 @@ class MinervaRacingDataset(Dataset):
 
 
 # =====================================
+# Custom Data Collation
+# =====================================
+
+def custom_collate_fn(batch):
+    """Custom collate function to handle different scenario types with different labels"""
+    # Separate components
+    grids = torch.stack([torch.tensor(item['grid']) if not isinstance(item['grid'], torch.Tensor) else item['grid'] for item in batch])
+    track_ids = torch.stack([item['track_id'] for item in batch])
+    scenario_types = [item['scenario_type'] for item in batch]
+    
+    # Collate labels - handle different label keys
+    all_label_keys = set()
+    for item in batch:
+        all_label_keys.update(item['labels'].keys())
+    
+    labels = {}
+    for key in all_label_keys:
+        # Only include samples that have this label
+        label_values = []
+        for item in batch:
+            if key in item['labels']:
+                label_values.append(item['labels'][key])
+            else:
+                # Add default value based on label type
+                if key in ['pit_decision', 'tire_choice', 'fuel_mode', 'overtake_decision', 'risk_level', 'push_level']:
+                    label_values.append(torch.tensor(0, dtype=torch.long))
+                else:
+                    label_values.append(torch.tensor(0.0, dtype=torch.float32))
+        
+        labels[key] = torch.stack(label_values)
+    
+    # Metadata is optional
+    metadata = [item.get('metadata', {}) for item in batch]
+    
+    return {
+        'grid': grids,
+        'track_id': track_ids,
+        'scenario_type': scenario_types,
+        'labels': labels,
+        'metadata': metadata
+    }
+
+
+# =====================================
 # Advanced Training Logic
 # =====================================
 
@@ -938,7 +996,8 @@ class MinervaTrainer:
             num_workers=self.config.num_workers if len(self.train_dataset) > 100 else 0,
             pin_memory=self.config.pin_memory,
             persistent_workers=self.config.persistent_workers if len(self.train_dataset) > 100 else False,
-            drop_last=False  # Don't drop last with small datasets
+            drop_last=False,  # Don't drop last with small datasets
+            collate_fn=custom_collate_fn
         )
         
         # Handle small validation set
@@ -950,7 +1009,8 @@ class MinervaTrainer:
             shuffle=False,
             num_workers=0 if len(self.val_dataset) < 10 else self.config.num_workers // 2,
             pin_memory=self.config.pin_memory if len(self.val_dataset) > 10 else False,
-            persistent_workers=False  # Disable for small datasets
+            persistent_workers=False,  # Disable for small datasets
+            collate_fn=custom_collate_fn
         ) if len(self.val_dataset) > 0 else None
         
         print(f"Train samples: {len(self.train_dataset):,}")
