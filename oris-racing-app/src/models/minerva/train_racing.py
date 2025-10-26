@@ -40,12 +40,14 @@ class MinervaRacingAdapter(nn.Module):
         self.tire_strategy_head = nn.Sequential(
             nn.Linear(self.d_model, 256),
             nn.ReLU(),
+            nn.Dropout(0.3),
             nn.Linear(256, 3)  # Soft, Medium, Hard
         )
         
         self.fuel_optimization_head = nn.Sequential(
             nn.Linear(self.d_model, 128),
             nn.ReLU(),
+            nn.Dropout(0.3),
             nn.Linear(128, 1)  # Fuel save mode percentage
         )
         
@@ -53,24 +55,28 @@ class MinervaRacingAdapter(nn.Module):
         self.overtake_decision_head = nn.Sequential(
             nn.Linear(self.d_model, 128),
             nn.ReLU(),
+            nn.Dropout(0.3),
             nn.Linear(128, 2)  # Binary: overtake or not
         )
         
         self.risk_level_head = nn.Sequential(
             nn.Linear(self.d_model, 128),
             nn.ReLU(),
+            nn.Dropout(0.3),
             nn.Linear(128, 3)  # Low, Medium, High
         )
         
         self.push_level_head = nn.Sequential(
             nn.Linear(self.d_model, 128),
             nn.ReLU(),
+            nn.Dropout(0.3),
             nn.Linear(128, 3)  # Conservative, Normal, Aggressive
         )
         
         self.fuel_mode_head = nn.Sequential(
             nn.Linear(self.d_model, 128),
             nn.ReLU(),
+            nn.Dropout(0.3),
             nn.Linear(128, 3)  # Normal, Save, Critical
         )
         

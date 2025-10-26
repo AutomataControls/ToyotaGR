@@ -133,9 +133,13 @@ class MinervaRacingDataset(Dataset):
         
         # Split data for train/val
         if len(self.samples) > 0:
+            # Shuffle before split for better distribution
+            import random
+            random.shuffle(self.samples)
+            
             if stage == "train":
-                # Take 80% for training
-                split_idx = int(len(self.samples) * 0.8)
+                # Take 70% for training (to get more validation data)
+                split_idx = int(len(self.samples) * 0.7)
                 self.samples = self.samples[:split_idx]
                 
                 # Apply aggressive data augmentation
@@ -144,8 +148,8 @@ class MinervaRacingDataset(Dataset):
                     self._aggressive_augmentation()
                     print(f"  Augmented from {original_count} to {len(self.samples)} samples")
             elif stage == "val":
-                # Take 20% for validation
-                split_idx = int(len(self.samples) * 0.8)
+                # Take 30% for validation
+                split_idx = int(len(self.samples) * 0.7)
                 self.samples = self.samples[split_idx:]
         
         print(f"Created {len(self.samples)} samples for {stage}")
@@ -808,8 +812,8 @@ class MinervaRacingDataset(Dataset):
         """Apply aggressive data augmentation to increase dataset size"""
         augmented_samples = []
         
-        # Augmentation factor - create 20x more data for better diversity
-        augmentation_factor = 20
+        # Augmentation factor - reduced to prevent noise
+        augmentation_factor = 5
         
         for aug_idx in range(augmentation_factor):
             for sample in self.samples:
@@ -1253,6 +1257,8 @@ class MinervaTrainer:
     def _train_stage(self, stage: Dict, stage_idx: int) -> float:
         """Train a single stage"""
         best_stage_performance = 0.0
+        patience = 5  # Early stopping patience
+        epochs_without_improvement = 0
         
         for epoch in range(stage['epochs']):
             # Training epoch
@@ -1265,11 +1271,17 @@ class MinervaTrainer:
                 # Track best performance
                 if val_metrics['accuracy'] > best_stage_performance:
                     best_stage_performance = val_metrics['accuracy']
+                    epochs_without_improvement = 0  # Reset patience
                     
                     if val_metrics['accuracy'] > self.best_performance:
                         self.best_performance = val_metrics['accuracy']
                         self._save_checkpoint("minerva_best.pt", val_metrics['accuracy'])
                         print(f"\033[92mNew global best performance: {self.best_performance:.2f}% - Saved!\033[0m")
+                else:
+                    epochs_without_improvement += 1
+                    if epochs_without_improvement >= patience:
+                        print(f"\033[93mEarly stopping triggered - no improvement for {patience} epochs\033[0m")
+                        break
                 
                 # Log metrics
                 print(f"\n\033[93mStage {stage_idx + 1}, Epoch {epoch + 1} (Global: {self.global_step}):\033[0m")
