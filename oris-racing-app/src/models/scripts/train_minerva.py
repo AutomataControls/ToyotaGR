@@ -48,17 +48,17 @@ class TrainingConfig:
     data_root = "/content/ToyotaGR/src/data/tracks/tracks"
     tracks = ["Sonoma", "COTA", "Sebring", "Road America", "VIR", "barber"]
     
-    # Training stages (progressive curriculum) - reduced learning rates to prevent NaN
+    # Training stages (progressive curriculum) - adjusted for better generalization
     stages = [
-        {"name": "foundation", "epochs": 5, "lr": 1e-4, "focus": "basic_patterns"},
-        {"name": "strategic", "epochs": 5, "lr": 5e-5, "focus": "strategic_planning"},
-        {"name": "advanced", "epochs": 10, "lr": 1e-5, "focus": "complex_scenarios"},
-        {"name": "mastery", "epochs": 5, "lr": 5e-6, "focus": "fine_tuning"}
+        {"name": "foundation", "epochs": 10, "lr": 2e-4, "focus": "basic_patterns"},
+        {"name": "strategic", "epochs": 10, "lr": 1e-4, "focus": "strategic_planning"},
+        {"name": "advanced", "epochs": 15, "lr": 5e-5, "focus": "complex_scenarios"},
+        {"name": "mastery", "epochs": 10, "lr": 1e-5, "focus": "fine_tuning"}
     ]
     
     # A100 optimized settings
-    batch_size = 2  # Very small for tiny dataset
-    gradient_accumulation = 1  # Keep simple for now
+    batch_size = 8  # Increased for better gradient estimates with more data
+    gradient_accumulation = 4  # Effective batch size of 32
     num_workers = 2  # Reduced for small dataset
     pin_memory = True
     persistent_workers = False  # Disable for small dataset
@@ -808,8 +808,8 @@ class MinervaRacingDataset(Dataset):
         """Apply aggressive data augmentation to increase dataset size"""
         augmented_samples = []
         
-        # Augmentation factor - create 10x more data
-        augmentation_factor = 10
+        # Augmentation factor - create 20x more data for better diversity
+        augmentation_factor = 20
         
         for aug_idx in range(augmentation_factor):
             for sample in self.samples:
