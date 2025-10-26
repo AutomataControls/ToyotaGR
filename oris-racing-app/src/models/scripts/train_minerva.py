@@ -1399,11 +1399,11 @@ class MinervaTrainer:
         # Always compute primary losses
         if 'pit_strategy' in predictions and 'pit_decision' in labels:
             if 'pit_decision' in labels:
-                target = labels['pit_decision'][idx]
+                target = labels['pit_decision'][idx].long()
                 loss += self.criterion_pit(predictions['pit_strategy'].unsqueeze(0), target.unsqueeze(0))
         
         if 'tire_choice' in predictions and 'tire_choice' in labels:
-            target = labels['tire_choice'][idx]
+            target = labels['tire_choice'][idx].long()
             loss += self.criterion_tire(predictions['tire_choice'].unsqueeze(0), target.unsqueeze(0))
         
         if 'fuel_save' in predictions and 'fuel_save' in labels:
@@ -1413,28 +1413,28 @@ class MinervaTrainer:
         # Scenario-specific losses - use the CORRECT prediction heads
         if scenario_type == 'overtake':
             if 'overtake_decision' in labels and 'overtake_decision' in predictions:
-                target = labels['overtake_decision'][idx]
+                target = labels['overtake_decision'][idx].long()
                 loss += self.criterion_overtake(predictions['overtake_decision'].unsqueeze(0), target.unsqueeze(0))
             if 'risk_level' in labels and 'risk_level' in predictions:
-                target = labels['risk_level'][idx]
+                target = labels['risk_level'][idx].long()
                 loss += 0.5 * self.criterion_risk(predictions['risk_level'].unsqueeze(0), target.unsqueeze(0))
         
         elif scenario_type == 'tire_management':
             if 'push_level' in labels and 'push_level' in predictions:
-                target = labels['push_level'][idx]
+                target = labels['push_level'][idx].long()
                 loss += self.criterion_push(predictions['push_level'].unsqueeze(0), target.unsqueeze(0))
             # Use any binary labels with overtake head
             if 'tire_saving' in labels and 'overtake_decision' in predictions:
-                target = labels['tire_saving'][idx]
+                target = labels['tire_saving'][idx].long()
                 loss += 0.5 * self.criterion_overtake(predictions['overtake_decision'].unsqueeze(0), target.unsqueeze(0))
         
         elif scenario_type == 'fuel_management':
             if 'fuel_mode' in labels and 'fuel_mode' in predictions:
-                target = labels['fuel_mode'][idx]
+                target = labels['fuel_mode'][idx].long()
                 loss += self.criterion_fuel_mode(predictions['fuel_mode'].unsqueeze(0), target.unsqueeze(0))
             # Use any binary labels with overtake head
             if 'lift_and_coast' in labels and 'overtake_decision' in predictions:
-                target = labels['lift_and_coast'][idx]
+                target = labels['lift_and_coast'][idx].long()
                 loss += 0.5 * self.criterion_overtake(predictions['overtake_decision'].unsqueeze(0), target.unsqueeze(0))
         
         return loss
