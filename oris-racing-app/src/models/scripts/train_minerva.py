@@ -1103,13 +1103,15 @@ class MinervaTrainer:
         self.scaler = GradScaler() if self.config.use_amp else None
         
         # Loss functions
-        self.criterion_pit = nn.CrossEntropyLoss(label_smoothing=0.1)
-        self.criterion_tire = nn.CrossEntropyLoss(label_smoothing=0.1)
-        self.criterion_fuel = nn.BCEWithLogitsLoss()
+        self.criterion_pit = nn.CrossEntropyLoss(label_smoothing=0.1)  # 4 classes
+        self.criterion_tire = nn.CrossEntropyLoss(label_smoothing=0.1)  # 3 classes
+        self.criterion_fuel = nn.BCEWithLogitsLoss()  # Binary
         
         # Additional losses for advanced scenarios
-        self.criterion_overtake = nn.CrossEntropyLoss()
-        self.criterion_risk = nn.CrossEntropyLoss()
+        self.criterion_overtake = nn.CrossEntropyLoss()  # 2 classes (binary)
+        self.criterion_risk = nn.CrossEntropyLoss()  # 3 classes
+        self.criterion_push = nn.CrossEntropyLoss()  # 3 classes
+        self.criterion_fuel_mode = nn.CrossEntropyLoss()  # 3 classes
         
         print(f"Optimizer: AdamW with {len(param_groups)} parameter groups")
         print(f"Scheduler: CosineAnnealingWarmRestarts")
@@ -1420,7 +1422,7 @@ class MinervaTrainer:
         elif scenario_type == 'tire_management':
             if 'push_level' in labels and 'push_level' in predictions:
                 target = labels['push_level'][idx:idx+1]
-                loss += self.criterion_overtake(predictions['push_level'], target)
+                loss += self.criterion_push(predictions['push_level'], target)
             # Use any binary labels with overtake head
             if 'tire_saving' in labels and 'overtake_decision' in predictions:
                 target = labels['tire_saving'][idx:idx+1]
@@ -1429,7 +1431,7 @@ class MinervaTrainer:
         elif scenario_type == 'fuel_management':
             if 'fuel_mode' in labels and 'fuel_mode' in predictions:
                 target = labels['fuel_mode'][idx:idx+1]
-                loss += self.criterion_tire(predictions['fuel_mode'], target)
+                loss += self.criterion_fuel_mode(predictions['fuel_mode'], target)
             # Use any binary labels with overtake head
             if 'lift_and_coast' in labels and 'overtake_decision' in predictions:
                 target = labels['lift_and_coast'][idx:idx+1]
