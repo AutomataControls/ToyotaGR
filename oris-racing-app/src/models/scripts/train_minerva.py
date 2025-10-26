@@ -1260,10 +1260,17 @@ class MinervaTrainer:
                 if self.config.use_amp:
                     self.scaler.unscale_(self.optimizer)
                 
-                torch.nn.utils.clip_grad_norm_(
+                # Clip gradients to prevent NaN
+                grad_norm = torch.nn.utils.clip_grad_norm_(
                     self.model.parameters(), 
                     self.config.gradient_clip
                 )
+                
+                # Skip update if gradients are NaN
+                if torch.isnan(grad_norm):
+                    print(f"Warning: NaN gradients detected at step {self.global_step}, skipping update")
+                    self.optimizer.zero_grad()
+                    continue
                 
                 # Optimizer step
                 if self.config.use_amp:
@@ -1408,14 +1415,28 @@ class MinervaTrainer:
                     # Forward pass
                     predictions = self.model(race_data)
                     
-                    # Compute accuracy (simplified - check pit strategy)
-                    if 'pit_decision' in labels:
-                        pred_decision = predictions['pit_strategy'].argmax(dim=-1)
-                        target_decision = labels['pit_decision'][i:i+1]
-                        
-                        if pred_decision == target_decision:
-                            total_correct += 1
-                        total_samples += 1
+                    # Compute accuracy based on scenario type
+                    correct = False
+                    if scenario_types[i] == 'pit_strategy' and 'pit_decision' in labels:
+                        pred = predictions['pit_strategy'].argmax(dim=-1)
+                        target = labels['pit_decision'][i:i+1]
+                        correct = (pred == target).item()
+                    elif scenario_types[i] == 'tire_management' and 'push_level' in labels:
+                        pred = predictions['pit_strategy'].argmax(dim=-1)  # Using as proxy
+                        target = labels['push_level'][i:i+1]
+                        correct = (pred == target).item()
+                    elif scenario_types[i] == 'overtake' and 'overtake_decision' in labels:
+                        pred = (predictions['pit_strategy'][0, 0] > 0).long()  # Binary decision
+                        target = labels['overtake_decision'][i:i+1]
+                        correct = (pred == target).item()
+                    elif scenario_types[i] == 'fuel_management' and 'fuel_mode' in labels:
+                        pred = predictions['tire_choice'].argmax(dim=-1)  # Using as proxy
+                        target = labels['fuel_mode'][i:i+1]
+                        correct = (pred == target).item()
+                    
+                    if correct:
+                        total_correct += 1
+                    total_samples += 1
                     
                     # Compute loss
                     loss = self._compute_scenario_loss(
