@@ -976,7 +976,7 @@ class MinervaTrainer:
             try:
                 checkpoint = torch.load(best_checkpoint_path, map_location=self.device)
                 self.model.load_state_dict(checkpoint['model_state_dict'])
-                self.best_performance = checkpoint.get('best_accuracy', 0.0)
+                self.best_performance = checkpoint.get('performance', checkpoint.get('best_accuracy', 0.0))
                 print(f"\033[92mLoaded best checkpoint with {self.best_performance:.2f}% accuracy\033[0m")
             except Exception as e:
                 print(f"Warning: Could not load best checkpoint: {e}")
