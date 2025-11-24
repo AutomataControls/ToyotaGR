@@ -109,11 +109,18 @@ Each model is a sophisticated PyTorch implementation with real neural networks:
 - `scripts/train_prometheus.py` - Predictive model training
 - `scripts/train_toyota_models.py` - Train all models
 
+**Training Environments Supported**:
+- **Local Machine**: Run directly with `python scripts/train_{model_name}.py`
+- **Google Colab**: Upload training scripts and Toyota data, run with GPU acceleration
+- **Cloud Platforms**: Compatible with AWS, Azure, GCP for team training requirements
+- **Jupyter Notebooks**: `OLYMPUSRacing_Training.ipynb` for interactive training
+
 **Training Configuration**: `training_config.py`
-- Batch size: 32
+- Batch size: 32 (adjustable for available GPU memory)
 - Sequence length: 300 timesteps (5 minutes at 60Hz)
 - Learning rate: 1e-4 with scheduler
 - Device: CUDA when available, CPU fallback
+- **Colab GPU**: T4/V100 supported with automatic mixed precision
 
 ## API Integration
 

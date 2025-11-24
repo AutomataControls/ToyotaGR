@@ -74,6 +74,7 @@ ORIS combines five specialized AI models with **real Toyota GR Cup telemetry dat
 - **PyTorch 2.2+** for neural network inference
 - **5 Specialized AI Models** (MINERVA, ATLAS, IRIS, CHRONOS, PROMETHEUS)
 - **Concurrent server startup** with automatic dependency management
+- **Flexible Training**: Models trainable locally, Google Colab, or cloud platforms
 
 ### Database & Data
 - **InfluxDB 3 Core OSS** for telemetry time-series data
