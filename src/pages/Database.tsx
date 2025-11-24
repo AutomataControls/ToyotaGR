@@ -211,7 +211,7 @@ export const Database: React.FC = () => {
             <span>Total Packets</span>
           </div>
           <div className={styles.statValue}>
-            {status?.totalPackets.toLocaleString() || 0}
+            {(status?.totalPackets || 0).toLocaleString()}
           </div>
           <div className={styles.statSubtext}>
             this session
@@ -252,7 +252,7 @@ export const Database: React.FC = () => {
                         {connection.dataRate}Hz
                       </div>
                       <div className={styles.stat}>
-                        Packets: {connection.packetsReceived.toLocaleString()}
+                        Packets: {(connection.packetsReceived || 0).toLocaleString()}
                       </div>
                       <div className={styles.stat}>
                         Lost: {connection.packetsLost}
@@ -286,11 +286,11 @@ export const Database: React.FC = () => {
               <div className={styles.packetsList}>
                 {recentPackets.map((packet, index) => (
                   <div key={index} className={styles.packetItem}>
-                    <div>{new Date(packet.timestamp).toLocaleTimeString()}</div>
+                    <div>{packet.timestamp ? new Date(packet.timestamp).toLocaleTimeString() : 'N/A'}</div>
                     <div>#{packet.carNumber}</div>
-                    <div>{packet.speed.toFixed(1)} km/h</div>
-                    <div>{(packet.throttle * 100).toFixed(0)}%</div>
-                    <div>{(packet.brake * 100).toFixed(0)}%</div>
+                    <div>{(packet.speed || 0).toFixed(1)} km/h</div>
+                    <div>{((packet.throttle || 0) * 100).toFixed(0)}%</div>
+                    <div>{((packet.brake || 0) * 100).toFixed(0)}%</div>
                     <div>{packet.gear}</div>
                     <div>L{packet.lapNumber}/S{packet.sector}</div>
                   </div>
