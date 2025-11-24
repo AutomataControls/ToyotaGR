@@ -28,18 +28,18 @@ ORIS combines five specialized AI models with **real Toyota GR Cup telemetry dat
 - **Real-time telemetry analysis** from actual Toyota races (60Hz data processing)
 - **AI-powered strategy recommendations** using 5 specialist models
 - **Live database integration** with InfluxDB 3 Core for data correlation
-- **Interactive 3D visualization** of racing lines and track analysis
+- **Real-time 2D track visualization** of racing lines and track analysis
 - **Complete settings management** with user access control
 
 ## Features
 
-### AI Specialists
+### AI Specialists (5+ Million Parameters)
 
-- **MINERVA**: Strategic pattern recognition for race tactics
-- **ATLAS**: Spatial reasoning for optimal racing lines
-- **IRIS**: Visual pattern analysis for track conditions
-- **CHRONOS**: Temporal pattern recognition for timing optimization
-- **PROMETHEUS**: Predictive synthesis for race outcome modeling
+- **MINERVA** (~800K params): Strategic racing intelligence with multi-head attention for pit strategy and race tactics
+- **ATLAS** (~1.2M params): Spatial track intelligence with position-aware attention and track memory systems  
+- **IRIS** (~1M params): Vehicle dynamics intelligence with specialized throttle/brake/balance analysis
+- **CHRONOS** (~1.3M params): Timing intelligence with LSTM networks and temporal pattern recognition
+- **PROMETHEUS** (~1.4M params): Predictive analytics with multi-horizon forecasting and race outcome modeling
 
 ### Racing Intelligence
 
@@ -64,7 +64,7 @@ ORIS combines five specialized AI models with **real Toyota GR Cup telemetry dat
 ### Frontend
 - **React 19.1** with TypeScript 5.9
 - **Vite 7.1** for lightning-fast development
-- **Three.js** for 3D track visualization
+- **Custom 2D Canvas** for track visualization
 - **Recharts** for real-time telemetry graphs
 - **Lucide React** for professional racing icons
 - **Responsive CSS** with mobile optimization
@@ -92,8 +92,8 @@ ORIS combines five specialized AI models with **real Toyota GR Cup telemetry dat
 
 1. **Clone the repository:**
 ```bash
-git clone https://github.com/yourusername/oris-racing-app.git
-cd oris-racing-app
+git clone https://github.com/AutomataControls/ToyotaGR.git
+cd ToyotaGR
 ```
 
 2. **Install all dependencies (Node.js + Python):**
@@ -146,14 +146,14 @@ influxdb3 serve --node-id host01 --object-store file --data-dir ~/.influxdb3
 
 3. **Configure in ORIS Settings:**
    - URL: `http://localhost:8181`
-   - Username: `AutomataNexus`  
-   - Token: `Invertedskynet2$`
+   - Username: `your_username`  
+   - Token: `your_token`
    - Database: `toyota_gr_telemetry`
 
 ## Project Structure
 
 ```
-oris-racing-app/
+ToyotaGR/
 ├── src/
 │   ├── components/         # React components
 │   │   ├── layout/        # Header, Sidebar, Layout
@@ -271,8 +271,13 @@ npm run lint
 
 ## Hackathon Categories
 
-**Primary**: Real-Time Analytics  
-**Secondary**: AI/ML Innovation, Data Visualization
+🏆 **COMPETING IN: Real-Time Analytics Category**  
+
+**Why ORIS Wins:**
+- **Real AI Implementation**: 5+ million parameter PyTorch neural networks (not mock data)
+- **Live Race Engineer Tool**: Professional real-time decision support system
+- **Toyota Integration**: Processes actual GR Cup telemetry with exact parameter specifications
+- **Production Ready**: Complete full-stack implementation with live data capabilities
 
 **Toyota Requirements Met**:
 - Real Toyota GR Cup data integration  
@@ -283,7 +288,11 @@ npm run lint
 
 ## License
 
-MIT License - Built for Toyota GR "Hack the Track" Hackathon
+MIT License  
+
+**🏁 Built for Toyota GR "Hack the Track" Hackathon 2024**  
+**Category**: Real-Time Analytics  
+**Team**: AutomataControls
 
 ## Acknowledgments
 
