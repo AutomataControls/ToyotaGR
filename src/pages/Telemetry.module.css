@@ -1,0 +1,129 @@
+.telemetryPage {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  flex: 1;
+}
+
+.gaugeSection,
+.temperatureSection,
+.gForceSection {
+  min-height: 250px;
+}
+
+.gaugeSection h2,
+.temperatureSection h2,
+.gForceSection h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #374151;
+}
+
+.gaugeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.gaugeLabel {
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.gaugeValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #14b8a6;
+  margin-top: 0.25rem;
+}
+
+.tempGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.tempGroup h3 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #4b5563;
+}
+
+.tireTemps,
+.brakeTemps {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #1f2937;
+}
+
+.gForceDisplay {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.gForce {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: #f3f4f6;
+  border-radius: 6px;
+}
+
+.gForce span:first-child {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.gForce span:last-child {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #06b6d4;
+}
+
+.graphsSection {
+  grid-column: 1 / -1;
+}

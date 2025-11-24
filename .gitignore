@@ -1,0 +1,78 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Python virtual environment
+venv/
+__pycache__/
+*.pyc
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Model weights - these are too large for git
+*.pt
+*.pth
+*.pkl
+*.h5
+*.onnx
+*.pb
+src/models/**/*.pt
+src/models/**/*.pth
+src/models/**/*.pkl
+
+# Keep the training scripts excluded from the general exclusion
+racing_models/
+OLYMPUS_Racing_Models.zip
+
+# Development artifacts
+*.tmp
+*.temp
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# OS files
+Thumbs.db
+*.swp
+*~
+
+# IDE
+*.sublime-*
+.history/
+
+# Temporary files
+temp/
+tmp/
+
+# 3D Models (large files)
+public/track-models/*.glb
+public/track-models/*.gltf
+
+# Production builds
+build/
+*.tgz
+
+# Large dataset files (too big for GitHub)
+src/data/tracks/**/*.csv
+src/data/tracks/**/*.CSV
+*.zip

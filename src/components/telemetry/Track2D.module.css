@@ -1,0 +1,108 @@
+.container {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  border-radius: 12px;
+  padding: 20px;
+  color: white;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid #334155;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.header h3 {
+  margin: 0;
+  color: #f1f5f9;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.info {
+  display: flex;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.sector {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 0.75rem;
+}
+
+.sector.easy {
+  background-color: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+  border: 1px solid #22c55e;
+}
+
+.sector.medium {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+  border: 1px solid #f59e0b;
+}
+
+.sector.hard {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid #ef4444;
+}
+
+.trackContainer {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.track {
+  border-radius: 8px;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+.sectorLabel {
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+}
+
+.finishLabel {
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  font-size: 6px;
+}
+
+.stats {
+  border-top: 1px solid #334155;
+  padding-top: 16px;
+}
+
+.progressBar {
+  width: 100%;
+  height: 6px;
+  background-color: #334155;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #ef4444 0%, #f59e0b 50%, #22c55e 100%);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.trackStats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.trackStats span {
+  font-weight: 500;
+}

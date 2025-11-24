@@ -1,0 +1,113 @@
+.positionList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.driverRow {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+  background-color: #f9fafb;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.driverRow:hover {
+  background-color: #f3f4f6;
+}
+
+.ourDriver {
+  background-color: #f0fdfa;
+  border: 1px solid #14b8a6;
+}
+
+.position {
+  width: 2rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.driverInfo {
+  flex: 1;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.name {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.team {
+  color: #6b7280;
+  font-size: 0.75rem;
+}
+
+.gap {
+  width: 4rem;
+  text-align: right;
+  font-family: monospace;
+  color: #4b5563;
+}
+
+.lastLap {
+  width: 4rem;
+  text-align: right;
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.status {
+  width: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+}
+
+.pitTag {
+  background-color: #fbbf24;
+  color: #78350f;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+}
+
+.trend {
+  color: #14b8a6;
+  font-weight: 700;
+}
+
+.trackMap {
+  height: 150px;
+  background: linear-gradient(135deg, #e5e7eb 0%, #f3f4f6 100%);
+  border-radius: 0.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.trackOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ourPosition {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-weight: 600;
+  color: #14b8a6;
+}

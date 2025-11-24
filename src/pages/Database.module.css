@@ -1,0 +1,342 @@
+.databasePage {
+  padding: 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.toggleContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.toggleLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.toggle {
+  position: relative;
+  width: 60px;
+  height: 32px;
+  background-color: #d1d5db;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  padding: 2px;
+}
+
+.toggle.active {
+  background-color: #14b8a6;
+}
+
+.toggleSlider {
+  width: 28px;
+  height: 28px;
+  background-color: white;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: #6b7280;
+}
+
+.toggle.active .toggleSlider {
+  transform: translateX(28px);
+  color: #14b8a6;
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.375rem;
+  color: #dc2626;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.testButton {
+  padding: 0.5rem 1rem;
+  background-color: #14b8a6;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.testButton:hover {
+  background-color: #0f766e;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.statCard {
+  padding: 1.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background-color: #ffffff;
+}
+
+.statHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.statValue {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.25rem;
+}
+
+.statSubtext {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.mainContent {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.leftColumn,
+.rightColumn {
+  display: flex;
+  flex-direction: column;
+}
+
+.connectionsCard,
+.packetsCard {
+  flex: 1;
+  padding: 1.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background-color: #ffffff;
+}
+
+.cardTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1.5rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 2px solid #14b8a6;
+  padding-bottom: 0.5rem;
+}
+
+.connectionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.connectionItem {
+  padding: 1rem;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.connectionItem:hover {
+  background-color: #f3f4f6;
+}
+
+.connectionInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.connectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.carNumber {
+  font-weight: 700;
+  font-size: 1.125rem;
+  color: #1f2937;
+}
+
+.connectionStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.driverName {
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.connectionStats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.packetsContainer {
+  display: flex;
+  flex-direction: column;
+  height: 500px;
+}
+
+.packetsHeader {
+  display: grid;
+  grid-template-columns: 80px 40px 70px 60px 50px 40px 70px;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background-color: #f3f4f6;
+  border-radius: 0.375rem 0.375rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.packetsList {
+  flex: 1;
+  overflow-y: auto;
+  background-color: #ffffff;
+  border-radius: 0 0 0.375rem 0.375rem;
+}
+
+.packetItem {
+  display: grid;
+  grid-template-columns: 80px 40px 70px 60px 50px 40px 70px;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  font-size: 0.75rem;
+  border-bottom: 1px solid #f3f4f6;
+  color: #6b7280;
+  animation: fadeIn 0.5s ease-in;
+}
+
+.packetItem:nth-child(odd) {
+  background-color: #fafafa;
+}
+
+.packetItem:hover {
+  background-color: #f0fdf4;
+}
+
+.noData {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    background-color: #dcfce7;
+  }
+  to {
+    opacity: 1;
+    background-color: inherit;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .mainContent {
+    grid-template-columns: 1fr;
+  }
+  
+  .statsGrid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .databasePage {
+    padding: 1rem;
+  }
+  
+  .header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  
+  .title {
+    font-size: 1.5rem;
+  }
+  
+  .packetsHeader,
+  .packetItem {
+    grid-template-columns: 60px 30px 50px 40px 30px 30px 50px;
+    font-size: 0.625rem;
+    gap: 0.5rem;
+  }
+  
+  .connectionStats {
+    grid-template-columns: 1fr 1fr;
+  }
+}

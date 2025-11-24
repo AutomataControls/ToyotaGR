@@ -1,0 +1,18 @@
+import React from 'react';
+import styles from './Header.module.css';
+
+interface HeaderProps {
+  isLive?: boolean;
+  sessionType?: string;
+}
+
+export const Header: React.FC<HeaderProps> = ({ isLive = false, sessionType = 'Practice' }) => {
+  return (
+    <header className={styles.header}>
+      <div className={styles.logoSection}>
+        <h1 className={styles.title}>ORIS</h1>
+        <span className={styles.subtitle}>OLYMPUS Racing Intelligence System</span>
+      </div>
+    </header>
+  );
+};

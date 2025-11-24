@@ -1,0 +1,117 @@
+.dashboard {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Hackathon Banner */
+.hackathonBanner {
+  background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  color: white;
+  margin-bottom: 1rem;
+}
+
+.hackathonInfo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.category,
+.dataset,
+.status {
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.indicator.compliant {
+  background-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+  animation: pulse 2s infinite;
+}
+
+.indicator.pending {
+  background-color: #f59e0b;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
+.description {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.trackMapFullWidth {
+  width: 100%;
+  padding: 1.5rem;
+  padding-bottom: 0;
+  height: 500px;
+  margin-bottom: 1rem;
+}
+
+.grid {
+  flex: 1;
+  overflow: auto;
+  padding: 1.5rem;
+  padding-top: 0.5rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, minmax(250px, 1fr));
+  gap: 1.5rem;
+  min-height: 400px;
+}
+
+.trackPositionSection,
+.lapComparisonSection,
+.strategySection,
+.telemetrySection,
+.predictionsSection,
+.specialistSection {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 1200px) {
+  .trackMapFullWidth {
+    min-height: 350px;
+    max-height: 450px;
+  }
+  
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(3, minmax(300px, auto));
+  }
+}
+
+@media (max-width: 768px) {
+  .trackMapFullWidth {
+    min-height: 300px;
+    max-height: 400px;
+    padding: 1rem;
+  }
+  
+  .grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(5, minmax(300px, auto));
+  }
+}
