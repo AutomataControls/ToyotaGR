@@ -198,7 +198,7 @@ export const Database: React.FC = () => {
             <span>Data Rate</span>
           </div>
           <div className={styles.statValue}>
-            {status?.packetsPerSecond.toFixed(0) || 0}Hz
+            {(status?.packetsPerSecond || 0).toFixed(0)}Hz
           </div>
           <div className={styles.statSubtext}>
             packets per second
